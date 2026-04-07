@@ -2,7 +2,7 @@ _docs/
 _proc/
 
 *.mp3
-*.png
+*.packaging
 *.bak
 .gitattributes
 .last_checked
