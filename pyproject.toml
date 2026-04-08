@@ -31,3 +31,5 @@ version = {attr = "fastspec.__version__"}
 include = ["fastspec"]
 
 [tool.nbdev]
+allowed_metadata_keys = ['solveit_dialog_mode', 'solveit_ver']
+allowed_cell_metadata_keys = ['solveit_ai']
