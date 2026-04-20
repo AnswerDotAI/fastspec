@@ -47,7 +47,10 @@ class AsyncTransport:
         "Execute a request and decode JSON/text/binary response."
         resp = await self.client.request(method, url, headers=self._request_headers(headers, files=files),
             params=params, json=json_data, data=data, files=files)
-        resp.raise_for_status()
+        try: resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            e.args = (f"{e}\n{resp.text}",)
+            raise
         return resp if raw else self._decode(resp)
 
     async def stream(self, method, url, *, headers=None, params=None,
@@ -55,9 +58,10 @@ class AsyncTransport:
         async with self.client.stream(method, url, headers=self._request_headers(headers, files=files),
             params=params, json=json_data, data=data, files=files) as resp:
             try: resp.raise_for_status()
-            except httpx.HTTPStatusError:
+            except httpx.HTTPStatusError as e:
                 try: await resp.aread()
                 except Exception: pass
+                e.args = (f"{e}\n{resp.text}",)
                 raise
             async for event in aiter_sse(resp):
                 if not event.data: continue
@@ -66,4 +70,3 @@ class AsyncTransport:
                 except json.JSONDecodeError as e: raise ProtocolError(f"Invalid SSE JSON: {e}") from e
                 if isinstance(raw, dict): yield raw
                 else: raise ProtocolError(f"Expected SSE JSON object, got {type(raw).__name__}")
-
