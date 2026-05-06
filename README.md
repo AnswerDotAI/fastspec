@@ -234,12 +234,34 @@ A simple message request:
 ``` python
 resp = await ant_cli.messages.messages_post(
     model="claude-sonnet-4-20250514",
-    messages=[{"role": "user", "content": "What is fastspec?"}],
-    max_tokens=64)
+    messages=[{"role": "user", "content": "What is FastSpec?"}],
+    max_tokens=64,)
 resp['content'][0]['text']
 ```
 
-    '"Fastspec" could refer to a few different things depending on the context. Here are the most likely meanings:\n\n## 1. **FastSpec (Testing Framework)**\nFastSpec is a testing framework for Scala that aims to provide a more efficient and expressive way to write tests. It\'s designed'
+    "FastSpec could refer to a few different things depending on the context. Here are the most likely meanings:\n\n## 1. **Testing Framework**\nFastSpec is a testing framework for Scala that provides a more concise and expressive way to write tests compared to traditional frameworks. It's designed to be:"
+
+``` python
+resp
+```
+
+    {'model': 'claude-sonnet-4-20250514',
+     'id': 'msg_01Ad8x65wzsmc1wv9n3p5yc9',
+     'type': 'message',
+     'role': 'assistant',
+     'content': [{'type': 'text',
+       'text': "FastSpec could refer to a few different things depending on the context. Here are the most likely meanings:\n\n## 1. **Testing Framework**\nFastSpec is a testing framework for Scala that provides a more concise and expressive way to write tests compared to traditional frameworks. It's designed to be:"}],
+     'stop_reason': 'max_tokens',
+     'stop_sequence': None,
+     'stop_details': None,
+     'usage': {'input_tokens': 12,
+      'cache_creation_input_tokens': 0,
+      'cache_read_input_tokens': 0,
+      'cache_creation': {'ephemeral_5m_input_tokens': 0,
+       'ephemeral_1h_input_tokens': 0},
+      'output_tokens': 64,
+      'service_tier': 'standard',
+      'inference_geo': 'not_available'}}
 
 With streaming — just pass `stream=True` and iterate:
 
@@ -248,10 +270,15 @@ resp = await ant_cli.messages.messages_post(
     model="claude-sonnet-4-20250514",
     messages=[{"role": "user", "content": "Say hello in 3 languages."}],
     max_tokens=128, stream=True)
-async for ev in resp: print(ev['type'], end=' ')
+async for ev in resp: 
+    if ct:= nested_idx(ev,'delta','text'): print(ct, end=' ')
 ```
 
-    message_start content_block_start ping content_block_delta content_block_delta content_block_delta content_block_stop message_delta 
+    Hello! Here  are greetings in 3 languages:
+
+    1. **English**: Hello
+    2. **Spanish**: Hola
+    3. ** French**: Bonjour 
 
 ## OpenAI
 
@@ -265,7 +292,7 @@ resp = await oai_cli.chat.create_chat_completion(
 resp['choices'][0]['message']['content']
 ```
 
-    'FastSpec is a software tool used for the analysis of spectroscopic data, particularly in the context of astronomical observations, such as those from telescopes. It allows researchers and astronomers to quickly and efficiently analyze the spectral data collected from various celestial objects.\n\nFastSpec typically includes features for:\n\n1. **Data Processing**:'
+    'FastSpec is an online tool designed to facilitate the creation and analysis of spectral energy distributions (SEDs) for astronomical objects, particularly galaxies. Researchers can use FastSpec to model the spectral properties of various types of galaxies, taking into account different physical parameters and observational data.\n\nThe primary functions of FastSpec include:\n\n1.'
 
 ### Text-to-Speech (file output)
 
@@ -275,7 +302,7 @@ Path("hello.mp3").write_bytes(resp)
 print(f"Saved {len(resp)} bytes to hello.mp3")
 ```
 
-    Saved 25440 bytes to hello.mp3
+    Saved 25920 bytes to hello.mp3
 
 ### Transcription (file upload + streaming)
 
@@ -285,7 +312,7 @@ resp = await oai_cli.audio.create_transcription(
 async for ev in resp: print(ev.get('delta', ''), end='')
 ```
 
-    Hello from FastSPEC.
+    Hello from Fastback.
 
 ## Gemini
 
@@ -369,7 +396,7 @@ resp = await gem_cli.models.generate_content(
 resp['candidates'][0]['content']['parts'][0]['text'][:200]
 ```
 
-    "**FastSpec** is a Ruby gem and command-line tool designed to significantly speed up the execution of individual RSpec test files in Ruby on Rails applications.\n\nHere's a breakdown of what it is and wh"
+    "**FastSpec** is a Ruby gem designed to significantly speed up your RSpec test runs, particularly in large Ruby on Rails applications.\n\nHere's a breakdown of what it is and how it works:\n\n1.  **The Pro"
 
 Nested resource groups are accessed with attribute chaining:
 
@@ -436,105 +463,11 @@ allow({oai_cli.images: ['create_image'], OpFunc: ['__call__']})
 Check `create_image` and create an image of 2 kittens using pyrun, save
 it and add a message to display it with PIL
 
-##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
-
-Let me first check the signature:
-
-<details class="tool-usage-details">
-
-<summary>
-
-<code>pyrun(code='oai_cli.images.create_image')→'Creates an image given
-a prompt. \[Learn …'</code>
-</summary>
-
-``` json
-{
-  "id": "toolu_012TsbQvMhUtTfLuEVcrkrru",
-  "call": {
-    "function": "pyrun",
-    "arguments": {
-      "code": "oai_cli.images.create_image"
-    }
-  },
-  "result": "Creates an image given a prompt. [Learn more](/docs/guides/images).\n\nParameters:\n- prompt (str, required): A text description of the desired image(s). The maximum length is 32000 characters for the GPT image models, 1000 characters for `dall-e-2` and 4000 characters for `dall-e-3`.\n- user (str, optional): A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices#end-user-ids).\n- model (str, optional): The model to use for image generation. One of `dall-e-2`, `dall-e-3`, or a GPT image model (`gpt-image-1`, `gpt-image-1-mini`, `gpt-image-1.5`). Defaults to `dall-e-2` unless a parameter specific to the GPT image models is used.\n- n (int, optional): The number of images to generate. Must be between 1 and 10. For `dall-e-3`, only `n=1` is supported.\n- quality (str, optional): The quality of the image that will be generated. - `auto` (default value) will automatically select the best quality for the given model. - `high`, `medium` and `low` are supported for the GPT image models. - `hd` and `standard` are supported for `dall-e-3`. - `standard` is the only option for `dall-e-2`.\n- response_format (str, optional): The format in which generated images with `dall-e-2` and `dall-e-3` are returned. Must be one of `url` or `b64_json`. URLs are only valid for 60 minutes after the image has been generated. This parameter isn't supported for the GPT image models, which always return base64-encoded images.\n- output_format (str, optional): The format in which the generated images are returned. This parameter is only supported for the GPT image models. Must be one of `png`, `jpeg`, or `webp`.\n- output_compression (int, optional): The compression level (0-100%) for the generated images. This parameter is only supported for the GPT image models with the `webp` or `jpeg` output formats, and defaults to 100.\n- stream (bool, optional): Generate the image in streaming mode. Defaults to `false`. See the [Image generation guide](/docs/guides/image-generation) for more information. This parameter is only supported for the GPT image models.\n- partial_images (int, optional): The number of partial images to generate. This parameter is used for streaming responses that return partial images. Value must be between 0 and 3. When set to 0, the response will be a single image sent in one streaming event. Note that the final image may be sent before the full number of partial images are generated if the full image is generated more quickly.\n- size (str, optional): The size of the generated images. Must be one of `1024x1024`, `1536x1024` (landscape), `1024x1536` (portrait), or `auto` (default value) for the GPT image models, one of `256x256`, `512x512`, or `1024x1024` for `dall-e-2`, and one of `1024x1024`, `1792x1024`, or `1024x1792` for `dall-e-3`.\n- moderation (str, optional): Control the content-moderation level for images generated by the GPT image models. Must be either `low` for less restrictive filtering or `auto` (default value).\n- background (str, optional): Allows to set transparency for the background of the generated image(s). This parameter is only supported for the GPT image models. Must be one of `transparent`, `opaque` or `auto` (default value). When `auto` is used, the model will automatically determine the best background for the image. If `transparent`, the output format needs to support transparency, so it should be set to either `png` (default value) or `webp`.\n- style (str, optional): The style of the generated images. This parameter is only supported for `dall-e-3`. Must be one of `vivid` or `natural`. Vivid causes the model to lean towards generating hyper-real and dramatic images. Natural causes the model to produce more natural, less hyper-real looking images."
-}
-```
-
-</details>
-
-Now let me generate the image and save it:
-
-<details class="tool-usage-details">
-
-<summary>
-
-<code>pyrun(code='import base64\_ = await oai_cli.imag…')→'Saved 1944735
-bytes to kittens.png'</code>
-</summary>
-
-``` json
-{
-  "id": "toolu_01Cm61dMxXeoxsdQSb5gXN44",
-  "call": {
-    "function": "pyrun",
-    "arguments": {
-      "code": "import base64\nresp_ = await oai_cli.images.create_image(\n    prompt=\"Two adorable kittens playing together on a sunny windowsill\",\n    model=\"dall-e-3\", size=\"1024x1024\", response_format=\"b64_json\")\nimg_data_ = base64.b64decode(resp_['data'][0]['b64_json'])\nPath(\"kittens.png\").write_bytes(img_data_)\nf\"Saved {len(img_data_)} bytes to kittens.png\""
-    }
-  },
-  "result": "Saved 1944735 bytes to kittens.png"
-}
-```
-
-</details>
-
-Image saved! Now let me add a message to display it:
-
-<details class="tool-usage-details">
-
-<summary>
-
-<code>add_msg(content='from PIL import Image.open("kitten…',
-msg_type='code', run=True)→'\_3327de7c'</code>
-</summary>
-
-``` json
-{
-  "id": "toolu_019cHjQtdo1tYvtsLUiSA1eC",
-  "call": {
-    "function": "add_msg",
-    "arguments": {
-      "content": "from PIL import Image\nImage.open(\"kittens.png\")",
-      "msg_type": "code",
-      "run": "True"
-    }
-  },
-  "result": "_3327de7c"
-}
-```
-
-</details>
-
-Done! I’ve generated a DALL-E 3 image of two kittens, saved it as
-`kittens.png` (~1.9MB), and added a code message that opens it with PIL.
-It should be displaying below. 🐱🐱
-
-<details class="token-usage-details">
-
-<summary>
-
-\$0.3094
-</summary>
-
-`total=195,522 | in=195,004 | out=518 | cached=90.3% | cache_new=8,810 | $0.3094`
-
-</details>
-
 ``` python
 Image.open("kittens.png")
 ```
 
-![](index_files/figure-commonmark/cell-18-output-1.png)
+![](index_files/figure-commonmark/cell-19-output-1.png)
 
 **Single group access** — only specific groups:
 
@@ -544,73 +477,6 @@ allow({oai_cli.chat: [...], OpFunc: ['__call__']})
 
 Ok check what methods are in this group, and test using one of them
 
-##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
-
-<details class="tool-usage-details">
-
-<summary>
-
-<code>pyrun(code='oai_cli.chat')→'- chat.list_chat_completions(model,
-meta…'</code>
-</summary>
-
-``` json
-{
-  "id": "toolu_01VSmD936SN6ZrxkwKLrb5xm",
-  "call": {
-    "function": "pyrun",
-    "arguments": {
-      "code": "oai_cli.chat"
-    }
-  },
-  "result": "- chat.list_chat_completions(model, metadata, after, limit, order): *List stored Chat Completions. Only Chat Completions that have been stored with the `store` parameter set to `true` will be returned.*\n- chat.create_chat_completion(messages, model, metadata, top_logprobs, user, safety_identifier, prompt_cache_key, prompt_cache_retention, modalities, max_completion_tokens, web_search_options, response_format, audio, max_tokens, prediction, seed, tools, tool_choice, function_call, functions, temperature, top_p, service_tier, verbosity, reasoning_effort, frequency_penalty, presence_penalty, store, stream, stop, logit_bias, logprobs, n, stream_options, parallel_tool_calls): ***Starting a new project?** We recommend trying [Responses](/docs/api-reference/responses) to take advantage of the latest OpenAI platform features. Compare [Chat Completions with Responses](/docs/guides/responses-vs-chat-completions?api-mode=responses). --- Creates a model response for the given chat conversation. Learn more in the [text generation](/docs/guides/text-generation), [vision](/docs/guides/vision), and [audio](/docs/guides/audio) guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, [refer to the reasoning guide](/docs/guides/reasoning). Returns a chat completion object, or a streamed sequence of chat completion chunk objects if the request is streamed.*\n- chat.get_chat_completion(completion_id): *Get a stored chat completion. Only Chat Completions that have been created with the `store` parameter set to `true` will be returned.*\n- chat.update_chat_completion(completion_id, metadata): *Modify a stored chat completion. Only Chat Completions that have been created with the `store` parameter set to `true` can be modified. Currently, the only supported modification is to update the `metadata` field.*\n- chat.delete_chat_completion(completion_id): *Delete a stored chat completion. Only Chat Completions that have been created with the `store` parameter set to `true` can be deleted.*\n- chat.get_chat_completion_messages(completion_id, after, limit, order): *Get the messages in a stored chat completion. Only Chat Completions that have been created with the `store` parameter set to `true` will be returned.*"
-}
-```
-
-</details>
-
-The `chat` group has 6 methods: `create_chat_completion`,
-`list_chat_completions`, `get/update/delete_chat_completion`, and
-`get_chat_completion_messages`. Let me test `create_chat_completion`:
-
-<details class="tool-usage-details">
-
-<summary>
-
-<code>pyrun(code='resp = await oai_cli.chat.create_chat_co…')→'Fastspec
-works perfectly!'</code>
-</summary>
-
-``` json
-{
-  "id": "toolu_017PrVh2FyDDM9LzxFa1gNGw",
-  "call": {
-    "function": "pyrun",
-    "arguments": {
-      "code": "resp = await oai_cli.chat.create_chat_completion(\n    model=\"gpt-4o-mini\",\n    messages=[{\"role\": \"user\", \"content\": \"Say 'fastspec works!' in exactly 3 words\"}],\n    max_tokens=10)\nresp['choices'][0]['message']['content']"
-    }
-  },
-  "result": "Fastspec works perfectly!"
-}
-```
-
-</details>
-
-Works! The `chat` group has 6 operations, and `create_chat_completion`
-returned successfully via `pyrun` — GPT-4o-mini responded with “Fastspec
-works perfectly!” (close enough to 3 words 😄).
-
-<details class="token-usage-details">
-
-<summary>
-
-\$0.5812
-</summary>
-
-`total=153,000 | in=152,653 | out=347 | cached=65.2% | cache_new=50,452 | $0.5812`
-
-</details>
-
 **Single client access** — all groups on one specific client:
 
 ``` python
@@ -618,75 +484,6 @@ for nm, g in oai_cli.groups.items(): allow({g: [...], OpFunc: ['__call__']})
 ```
 
 Ok let’s see if you can access and use a group we’ve not tried yet
-
-##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
-
-Let me see what’s available:
-
-<details class="tool-usage-details">
-
-<summary>
-
-<code>pyrun(code='list(oai_cli.groups.keys())')→"\['assistants',
-'audio', 'batches', 'chat…"</code>
-</summary>
-
-``` json
-{
-  "id": "toolu_01E5AqhuPETkZdjvbBeqzq67",
-  "call": {
-    "function": "pyrun",
-    "arguments": {
-      "code": "list(oai_cli.groups.keys())"
-    }
-  },
-  "result": "['assistants', 'audio', 'batches', 'chat', 'completions', 'containers', 'conversations', 'embeddings', 'evals', 'files', 'fine_tuning', 'images', 'models', 'moderations', 'organization', 'projects', 'realtime', 'responses', 'threads', 'uploads', 'vector_stores', 'videos', 'skills', 'chatkit']"
-}
-```
-
-</details>
-
-Lots of options! We’ve used `chat`, `images`, and `audio`. Let me try
-`embeddings`:
-
-<details class="tool-usage-details">
-
-<summary>
-
-<code>pyrun(code='resp = await
-oai_cli.embeddings.create_e…')→'Dimensions: 1536, first 5:
-\[-0.000866889…'</code>
-</summary>
-
-``` json
-{
-  "id": "toolu_016ZvjfZQi4rkRZzHN9KUMYC",
-  "call": {
-    "function": "pyrun",
-    "arguments": {
-      "code": "resp = await oai_cli.embeddings.create_embedding(\n    model=\"text-embedding-3-small\",\n    input=\"fastspec is awesome\")\nf\"Dimensions: {len(resp['data'][0]['embedding'])}, first 5: {resp['data'][0]['embedding'][:5]}\""
-    }
-  },
-  "result": "Dimensions: 1536, first 5: [-0.0008668899536132812, 0.0231170654296875, 0.005199432373046875, -0.00798797607421875, -0.00852203369140625]"
-}
-```
-
-</details>
-
-Works! Got a 1536-dimensional embedding vector from
-`text-embedding-3-small` for “fastspec is awesome”. There are 24 groups
-total on the OpenAI client — plenty to explore.
-
-<details class="token-usage-details">
-
-<summary>
-
-\$0.5860
-</summary>
-
-`total=157,008 | in=156,679 | out=329 | cached=66.1% | cache_new=52,116 | $0.5860`
-
-</details>
 
 **Full API access** — all groups and methods on all clients:
 
