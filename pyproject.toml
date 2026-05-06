@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = []
+dependencies = ['fastcore', 'httpx']
 
 [project.urls]
 Repository = "https://github.com/AnswerDotAI/fastspec"
@@ -31,5 +31,5 @@ version = {attr = "fastspec.__version__"}
 include = ["fastspec"]
 
 [tool.nbdev]
-allowed_metadata_keys = ['solveit_dialog_mode', 'solveit_ver']
+allowed_metadata_keys = ['solveit']
 allowed_cell_metadata_keys = ['solveit_ai']

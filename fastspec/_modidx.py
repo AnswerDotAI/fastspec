@@ -87,11 +87,4 @@ d = { 'settings': { 'branch': 'main',
                                     'fastspec.transport.AsyncTransport.request': ( 'transport.html#asynctransport.request',
                                                                                    'fastspec/transport.py'),
                                     'fastspec.transport.AsyncTransport.stream': ( 'transport.html#asynctransport.stream',
-                                                                                  'fastspec/transport.py')},
-            'fastspec.types': { 'fastspec.types.Completion': ('types.html#completion', 'fastspec/types.py'),
-                                'fastspec.types.Delta': ('types.html#delta', 'fastspec/types.py'),
-                                'fastspec.types.Msg': ('types.html#msg', 'fastspec/types.py'),
-                                'fastspec.types.Part': ('types.html#part', 'fastspec/types.py'),
-                                'fastspec.types.RequestOptions': ('types.html#requestoptions', 'fastspec/types.py'),
-                                'fastspec.types.ToolCall': ('types.html#toolcall', 'fastspec/types.py'),
-                                'fastspec.types.Usage': ('types.html#usage', 'fastspec/types.py')}}}
+                                                                                  'fastspec/transport.py')}}}
