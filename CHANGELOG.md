@@ -2,6 +2,14 @@
 
 <!-- do not remove -->
 
+## 0.0.5
+
+### New Features
+
+- User defined group name parsing ([#2](https://github.com/AnswerDotAI/fastspec/issues/2))
+
+
+
 ## 0.0.4
 
 ### New Features
