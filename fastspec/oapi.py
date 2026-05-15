@@ -82,7 +82,7 @@ def mk_doc(op, sig, sparams):
 
 # %% ../nbs/04_oapi.ipynb #6b2f1057
 class OpFunc:
-    def __init__(self, op_spec, client, base_url):
+    def __init__(self, op_spec, client, base_url, form_encoder=None):
         store_attr()
         self.sparams       = sanitized_params(op_spec)
         self.__signature__ = mk_sig(op_spec, self.sparams)
@@ -95,6 +95,7 @@ class OpFunc:
         self.route_params  = op_spec.route_params
         self.query_params  = op_spec.query_params
         self.body_params   = op_spec.body_params
+        self.request_content_type = op_spec.request_content_type
         self.file_params   = op_spec.file_params
         self.summary       = op_spec.summary
         self.docs_url      = op_spec.docs_url
@@ -174,13 +175,16 @@ async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, rout
         async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json_data=body, **kwargs): yield ev
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
-# %% ../nbs/04_oapi.ipynb #3b0399ad
+# %% ../nbs/04_oapi.ipynb #0296d943
 @patch
 async def __call__(self:OpFunc, *args, **kwargs):
     stream, headers, route, query, body, files = self._split(self._bind(args, kwargs))
     url = _join_url(self.base_url, _path(self.path, route_params=route))
-    if files: kw = dict(body=None, files=files, data=body or None)
-    else:     kw = dict(body=body)
+    if files: 
+        kw = dict(body=None, files=files, data=self.form_encoder(body) or None)
+    elif self.request_content_type == "application/x-www-form-urlencoded": 
+        kw = dict(body=None, data=self.form_encoder(body))
+    else: kw = dict(body=body)
     if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
     return     await self._request(url, headers=headers, query=query, route=route, **kw)
 
@@ -217,9 +221,10 @@ def _build_groups(ops:List[OpFunc]):
 # %% ../nbs/04_oapi.ipynb #d4ff9dd9
 class OpenAPIClient:
     "Async client built from OpenAPI operation metadata."
-    def __init__(self, spec, *, headers=None, timeout=60.0):
+    def __init__(self, spec, *, headers=None, timeout=60.0, form_encoder=None):
         self.transport = AsyncTransport(timeout=timeout, base_headers=headers)
-        self.ops = [OpFunc(o, self.transport, spec.base_url) for o in spec.ops]
+        enc = ifnone(form_encoder, noop)
+        self.ops = [OpFunc(o, self.transport, spec.base_url, enc) for o in spec.ops]
         self.func_dict = {f"{o.path}:{o.verb.upper()}": o for o in self.ops}
         self.groups = _build_groups(self.ops)
         for k,v in self.groups.items(): setattr(self, k, v)

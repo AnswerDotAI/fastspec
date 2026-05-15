@@ -22,6 +22,7 @@ class OpSpec:
     query_params: List[str] = field(default_factory=list) # https://learn.openapis.org/specification/parameters#the-parameter-object
     body_params: List[str] = field(default_factory=list)
     file_params: List[str] = field(default_factory=list)  # format: binary params (multipart file uploads)
+    request_content_type: str = ""
     required_params: List[str] = field(default_factory=list)
     param_types: Dict = field(default_factory=dict)
     param_defaults: Dict = field(default_factory=dict)
@@ -195,9 +196,10 @@ def _body_params(op, spec):
     "Extract request JSON/body params from requestBody schema."
     rb = _resolve_obj(op.get("requestBody", {}), spec)
     content = rb.get("content", {})
-    schema = first((content.get(ct, {}).get("schema") for ct in ctypes), noop)
+    ct = first((ct for ct in ctypes if ct in content), None)
+    schema = content.get(ct, {}).get("schema") if ct else None
     if not schema:
-        return AttrDict(body_params=[], file_params=[], required_params=set(), param_types={}, param_docs={}, param_defaults={})
+        return AttrDict(body_params=[], file_params=[], required_params=set(), param_types={}, param_docs={}, param_defaults={}, request_content_type=ct)
     props, req = _schema_props_required(schema, spec)
     fparams = [k for k,v in props.items() if _resolve_obj(v, spec).get("format") == "binary"]
     bparams = [k for k in props if k not in fparams]
@@ -206,8 +208,7 @@ def _body_params(op, spec):
     defaults = {k: d for k,v in props.items() if (d := _prop_default(v, spec)) is not _MISSING}
     # Params without a default or nullable type are required
     # req |= {k for k in props if k not in defaults} # too aggresive doesn't match when spec is incomplete
-    return AttrDict(body_params=bparams, file_params=fparams, required_params=req, param_types=ptypes, 
-                    param_docs=pdocs, param_defaults=defaults)
+    return AttrDict(body_params=bparams, file_params=fparams, required_params=req, param_types=ptypes, param_docs=pdocs, param_defaults=defaults, request_content_type=ct)
 
 # %% ../nbs/03_spec.ipynb #9ab326f7
 _pat_md_url = re.compile(r"\[[^\]]+\]\((https?://[^)\s]+)\)")
@@ -247,6 +248,7 @@ def openapi_to_ops(spec):
                     query_params=pdict.query_params,
                     body_params=bpdict.body_params,
                     file_params=bpdict.file_params,
+                    request_content_type=bpdict.request_content_type,
                     required_params=pdict.required_params | bpdict.required_params,
                     param_types=merge(pdict.param_types, bpdict.param_types),
                     param_defaults=merge(pdict.param_defaults, bpdict.param_defaults),
