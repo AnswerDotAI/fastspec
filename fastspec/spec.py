@@ -63,9 +63,9 @@ def snake(s: str):
     return s.lower().strip("_")
 
 # %% ../nbs/03_spec.ipynb #cb91b9f0
-def _group_name(op_id: str, path: str, http_verb:str='', op_id_seps=('/', '.')):
+def _group_name(op_id: str, path: str, verb:str=''):
     "Infer group + name from operationId with path fallback."
-    for sep in op_id_seps:
+    for sep in ('/', '.'):
         if sep in op_id:
             grp, nm = op_id.split(sep, 1)
             return snake(grp), snake(nm)
@@ -73,7 +73,7 @@ def _group_name(op_id: str, path: str, http_verb:str='', op_id_seps=('/', '.')):
     # strip version /v1,/v1.2,etc
     if segs and re.fullmatch(r"v\d+(?:[a-zA-Z0-9._-]*)?", segs[0]): segs = segs[1:] 
     grp = snake(segs[0]) if segs else "api"
-    return grp, snake(op_id or ("_".join([http_verb.lower()]+segs[1:]) if segs else "call"))
+    return grp, snake(op_id or ("_".join([verb.lower()]+segs[1:]) if segs else "call"))
 
 # %% ../nbs/03_spec.ipynb #21d5e9fa
 def _path_params(path: str):
@@ -228,14 +228,14 @@ def _op_docs_url(op):
     if desc and (durl := _first_url(desc)): return durl
 
 # %% ../nbs/03_spec.ipynb #112ac323
-def openapi_to_ops(spec):
+def openapi_to_ops(spec, group_func=None):
     "Convert OpenAPI-like dict to OpSpec list."
     res = []
     for path, path_desc in spec.paths.items():
         for verb, op in path_desc.items():
             if verb.lower() not in _http_verbs: continue
             op_id = str(op.get("operationId") or f"{verb}_{path}")
-            group, name = _group_name(op_id, path, verb)
+            group, name = (group_func or _group_name)(op_id, path, verb)
             pdict, bpdict = _collect_params(op, path_desc, spec), _body_params(op, spec)
             res.append(
                 OpSpec(
@@ -321,10 +321,10 @@ class SpecParser:
     def __init__(self, base_url, ops): store_attr()
 
     @classmethod
-    def from_openapi(cls, spec):
+    def from_openapi(cls, spec, group_func=None):
         "Create from an OpenAPI spec dict."
         base_url = first((spec.get("servers") or [{}]), {}).get("url", "")
-        return cls(base_url=base_url, ops=openapi_to_ops(spec))
+        return cls(base_url=base_url, ops=openapi_to_ops(spec, group_func))
 
     @classmethod
     def from_discovery(cls, spec):
