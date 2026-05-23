@@ -154,12 +154,14 @@ def _join_url(base, path):
 
 # %% ../nbs/04_oapi.ipynb #ca48c44b
 @patch
-def _raise_with_context(self:OpFunc, exc: Exception, *, endpoint: str, route: Optional[dict], query: Optional[dict], body: Optional[dict]):
+def _raise_with_context(self:OpFunc, exc:Exception, *, endpoint:str, route:Optional[dict], query:Optional[dict], body:Optional[dict]):
     "Raise APIError with operation context for dynamic op calls."
     provider,model,ep = '','',''
     # TODO: Make APIError generic, users can modify/subclass it include additional info like model,provider etc..
-    if isinstance(exc, httpx.HTTPStatusError): raise exc.api_error(provider=provider, model=model) from exc
+    if isinstance(exc, (httpx.HTTPStatusError, httpx.RequestError)):
+        raise exc.api_error(provider=provider, model=model) from exc
     raise exc
+
 
 # %% ../nbs/04_oapi.ipynb #c7c96f87
 @patch
