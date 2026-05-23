@@ -41,7 +41,7 @@ def _retryable(status_code, error_type, code, message):
     hints = ("server_error", "internal", "overload", "rate_limit", "timeout", "unavailable", "temporar")
     if any(h in t for h in hints): return True
     if any(h in c for h in hints): return True
-    if any(h in m for h in ("try again", "server error", "temporar", "timeout", "overloaded", "unavailable")): return True
+    if any(h in m for h in ("try again", "server error", "temporar", "timeout", "overloaded", "unavailable", "rate limit")): return True
     return False
 
 # %% ../nbs/00_errors.ipynb #9c1cdf65
@@ -159,6 +159,17 @@ def api_error(self:httpx.HTTPStatusError, *, provider: str = "", model: str = ""
         request_id=_req_id(resp.headers),
         raw=err.raw,
     )
+
+# %% ../nbs/00_errors.ipynb #859197d5
+@patch
+def api_error(self:httpx.RequestError, *, provider:str="", model:str="", endpoint:str=""):
+    "Build APIError from httpx RequestError (transport-level failure)."
+    req = getattr(self, '_request', None)
+    if not endpoint and req is not None: endpoint = f"{req.method.upper()} {req.url.path}"
+    et = type(self).__name__
+    retry = isinstance(self, (httpx.TimeoutException, httpx.NetworkError, httpx.ProtocolError, httpx.ProxyError))
+    return APIError(str(self) or et, provider=provider, model=model, endpoint=endpoint,
+                    error_type=et, code=et, retryable=retry, raw=self)
 
 # %% ../nbs/00_errors.ipynb #e6e2cc84
 def api_error_from_event(event, *, provider: str = "", model: str = "", endpoint: str = ""):
