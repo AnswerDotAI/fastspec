@@ -189,8 +189,8 @@ async def __call__(self:OpFunc, *args, **kwargs):
     elif self.request_content_type == "application/x-www-form-urlencoded": 
         kw = dict(body=None, data=self.form_encoder(body))
     else: kw = dict(body=body)
-    if stream: return dict2obj(self._stream(url, headers=headers, query=query, route=route, **kw))
-    return dict2obj(await self._request(url, headers=headers, query=query, route=route, **kw))
+    if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
+    return await self._request(url, headers=headers, query=query, route=route, **kw)
 
 # %% ../nbs/04_oapi.ipynb #99464917
 class OpGroup:
