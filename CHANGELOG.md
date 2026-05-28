@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.7
+
+- revert dict2obj resp which was causing issues in fastllm
+
+
 ## 0.0.6
 
 ### New Features
