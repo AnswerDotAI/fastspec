@@ -15,7 +15,7 @@ from fastcore.utils import *
 from fastcore.meta import delegates
 
 from .errors import APIError
-from .spec import OpSpec, SpecParser, snake
+from .spec import OpSpec, SpecParser, snake, sanitize_param_name
 from .transport import AsyncTransport
 
 # %% ../nbs/04_oapi.ipynb #68bf64d1
@@ -35,7 +35,7 @@ def sanitized_params(op):
     "Mapping from original param names to valid Python identifiers."
     res = {}
     for p in op.route_params + op.query_params + op.body_params + op.file_params:
-        name = snake(re.sub(r'\W', '_', p).strip('_'))
+        name = sanitize_param_name(p)
         if keyword.iskeyword(name): name += '_'
         res[p] = name
     return res
@@ -189,8 +189,8 @@ async def __call__(self:OpFunc, *args, **kwargs):
     elif self.request_content_type == "application/x-www-form-urlencoded": 
         kw = dict(body=None, data=self.form_encoder(body))
     else: kw = dict(body=body)
-    if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
-    return     await self._request(url, headers=headers, query=query, route=route, **kw)
+    if stream: return dict2obj(self._stream(url, headers=headers, query=query, route=route, **kw))
+    return dict2obj(await self._request(url, headers=headers, query=query, route=route, **kw))
 
 # %% ../nbs/04_oapi.ipynb #99464917
 class OpGroup:
