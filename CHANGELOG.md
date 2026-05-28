@@ -2,6 +2,14 @@
 
 <!-- do not remove -->
 
+## 0.0.6
+
+### New Features
+
+- op/path tags in `group_func`, dedupe route/body/query params ([#4](https://github.com/AnswerDotAI/fastspec/issues/4))
+
+- Handle httpx.RequestError as retryable APIError ([#3](https://github.com/AnswerDotAI/fastspec/pull/3)), thanks to [@ncoop57](https://github.com/ncoop57)
+
 ## 0.0.5
 
 ### New Features
