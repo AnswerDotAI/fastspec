@@ -2,6 +2,15 @@
 
 <!-- do not remove -->
 
+
+
+## 0.0.8
+
+### New Features
+
+- Return request response and stream events as `AttrDict` ([#5](https://github.com/AnswerDotAI/fastspec/pull/5)), thanks to [@KeremTurgutlu](https://github.com/KeremTurgutlu)
+
+
 ## 0.0.7
 
 - revert dict2obj resp which was causing issues in fastllm
