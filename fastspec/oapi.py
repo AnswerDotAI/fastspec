@@ -168,7 +168,7 @@ def _raise_with_context(self:OpFunc, exc:Exception, *, endpoint:str, route:Optio
 @delegates(AsyncTransport.request) # files, raw
 async def _request(self:OpFunc, url, *, headers=None, query=None, body=None, route=None, **kwargs):
     "Execute an HTTP request and return decoded response."
-    try: return await self.client.request(self.verb, url, headers=headers, params=query, json_data=body, **kwargs)
+    try: return dict2obj(await self.client.request(self.verb, url, headers=headers, params=query, json_data=body, **kwargs))
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 @patch
@@ -176,7 +176,7 @@ async def _request(self:OpFunc, url, *, headers=None, query=None, body=None, rou
 async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, route=None, **kwargs):
     "Execute an SSE request yielding parsed JSON events."
     try:
-        async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json_data=body, **kwargs): yield ev
+        async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json_data=body, **kwargs): yield dict2obj(ev)
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 # %% ../nbs/04_oapi.ipynb #0296d943
