@@ -2,7 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.0.9
 
+
+### Bugs Squashed
+
+- guard against empty response body in _decode ([#6](https://github.com/AnswerDotAI/fastspec/pull/6)), thanks to [@ncoop57](https://github.com/ncoop57)
 
 ## 0.0.8
 
