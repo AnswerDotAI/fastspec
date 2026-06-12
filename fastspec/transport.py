@@ -39,6 +39,7 @@ class AsyncTransport:
     @staticmethod
     def _decode(resp):
         "Decode response body using content type."
+        if not resp.content: return None
         ctype = (resp.headers.get("content-type") or "").lower()
         if "application/json" in ctype or ctype.endswith("+json"): return resp.json()
         if ctype.startswith("text/") or "application/x-ndjson" in ctype: return resp.text
