@@ -444,10 +444,10 @@ repository. The name is not case sensitive. - repo (str, required): The
 name of the repository without the `.git` extension. The name is not
 case sensitive.
 
-## AI Tool Integration (`pyrun`)
+## AI Tool Integration (`python`)
 
 fastspec clients can be made available to AI assistants via
-[solveit](https://github.com/AnswerDotAI/solveit)’s `pyrun` sandbox
+[solveit](https://github.com/AnswerDotAI/solveit)’s `python` sandbox
 using `allow()`. Three levels of access are supported:
 
 **Single method access** — lock down to specific operations:
@@ -460,7 +460,7 @@ from PIL import Image
 allow({oai_cli.images: ['create_image'], OpFunc: ['__call__']})
 ```
 
-Check `create_image` and create an image of 2 kittens using pyrun, save
+Check `create_image` and create an image of 2 kittens using python, save
 it and add a message to display it with PIL
 
 ``` python
