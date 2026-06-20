@@ -32,11 +32,18 @@ def _sort_key(o):
     return 2
 
 def sanitized_params(op):
-    "Mapping from original param names to valid Python identifiers."
-    res = {}
-    for p in op.route_params + op.query_params + op.body_params + op.file_params:
+    "Mapping from original param names to valid Python identifiers; exact names win collisions."
+    ps = op.route_params + op.query_params + op.body_params + op.file_params
+    def _sani(p):
         name = sanitize_param_name(p)
         if keyword.iskeyword(name): name += '_'
+        return name
+    res,used = {},{p for p in ps if _sani(p)==p}
+    for p in ps:
+        name = _sani(p)
+        if name!=p:
+            while name in used: name += '_'
+        used.add(name)
         res[p] = name
     return res
 
