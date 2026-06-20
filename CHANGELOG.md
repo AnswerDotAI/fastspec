@@ -2,6 +2,14 @@
 
 <!-- do not remove -->
 
+## 0.0.10
+
+
+### Bugs Squashed
+
+- Adding suffixes to duplicated sanitized param names ([#7](https://github.com/AnswerDotAI/fastspec/pull/7)), thanks to [@kafkasl](https://github.com/kafkasl)
+
+
 ## 0.0.9
 
 
