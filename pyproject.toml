@@ -30,6 +30,9 @@ version = {attr = "fastspec.__version__"}
 [tool.setuptools.packages.find]
 include = ["fastspec"]
 
+[project.entry-points.fastaudit_import_allow]
+fastspec = "fastspec"
+
 [tool.nbdev]
 allowed_metadata_keys = ['solveit']
 allowed_cell_metadata_keys = ['solveit_ai']
