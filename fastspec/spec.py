@@ -124,6 +124,11 @@ def _schema_props_required(schema, spec):
         p, r = _schema_props_required(sub, spec)
         props = merge(props, p)
         req |= r
+    for key in ("anyOf", "oneOf"):
+        branches = [_schema_props_required(sub, spec) for sub in schema.get(key, [])]
+        if branches:
+            props = merge(props, *[p for p,_ in branches])
+            req |= set.intersection(*[r for _,r in branches])
     return props, req
 
 # %% ../nbs/03_spec.ipynb #2319e3a4
