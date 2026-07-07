@@ -15,7 +15,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ['fastcore>=1.13.3', 'httpx']
+dependencies = ['fastcore>=1.14.3', 'httpx']
+
+[project.optional-dependencies]
+dev = ['safepyrun>=0.2.3', 'pyskills>=0.0.17']
 
 [project.urls]
 Repository = "https://github.com/AnswerDotAI/fastspec"
