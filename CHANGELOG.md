@@ -2,6 +2,18 @@
 
 <!-- do not remove -->
 
+## 0.1.0
+
+### New Features
+
+- Add sync client support (SyncTransport/SyncOpFunc) ([#15](https://github.com/AnswerDotAI/fastspec/issues/15))
+- Add `__allow__` protocol to OpGroup and OpenAPIClient for simpler `allow()` usage ([#16](https://github.com/AnswerDotAI/fastspec/issues/16))
+
+### Bugs Squashed
+
+- fix: walk anyOf/oneOf in `_schema_props_required` ([#14](https://github.com/AnswerDotAI/fastspec/pull/14)), thanks to [@jackhogan](https://github.com/jackhogan)
+
+
 ## 0.0.11
 
 ### Bugs Squashed
