@@ -273,3 +273,10 @@ def _group_docs(name, g, lvl=2):
 def full_docs(self:OpenAPIClient):
     "Complete markdown API reference: every group and operation."
     return "\n\n".join(_group_docs(nm, g) for nm,g in sorted(self.groups.items()))
+
+# %% ../nbs/04_oapi.ipynb #b97fc48e
+@patch
+def __allow__(self:OpGroup): return self.ops + list(self.subgroups.values())
+
+@patch
+def __allow__(self:OpenAPIClient): return list(self.groups.values())

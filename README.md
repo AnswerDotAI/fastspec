@@ -21,7 +21,9 @@ fastspec supports both OpenAPI (JSON/YAML) and Google Discovery specs:
 
 ``` python
 import yaml
+```
 
+``` python
 specs_path = Path('../specs/')
 
 # OpenAPI specs (Anthropic, OpenAI, GitHub, Stripe)
@@ -267,13 +269,13 @@ allow(oai_cli.images.create_image);
 **Single group access** — only specific groups:
 
 ``` python
-allow(*oai_cli.chat.ops)
+allow(oai_cli.chat)
 ```
 
 **Single client access** — all groups on one specific client:
 
 ``` python
-for g in oai_cli.groups.values(): allow(*g.ops)
+allow(oai_cli)
 ```
 
 **Full API access** — every operation on every client (any
