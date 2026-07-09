@@ -214,7 +214,7 @@ class SyncOpFunc(OpFunc):
     "`OpFunc` over a `SyncTransport`: calls return results directly, with no `await`."
     def __call__(self, *args, **kwargs):
         stream, url, headers, query, route, kw = self._prep(args, kwargs)
-        if stream: raise TypeError("stream=True needs an async client; or wrap the async client with `fastcore.net.iter_sync`")
+        if stream: raise TypeError("stream=True needs an async client; or wrap the async client with `fastcore.aio.iter_sync`")
         body = kw.pop('body')
         try: return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json_data=body, **kw))
         except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)

@@ -81,7 +81,7 @@ class AsyncTransport:
 class SyncTransport(AsyncTransport):
     "Sync twin of `AsyncTransport`, over `httpx.Client`. SSE needs the async transport, so `stream` raises."
     def stream(self, *args, **kwargs):
-        raise TypeError("SSE streaming needs `AsyncTransport`; drive it from sync code with `fastcore.net.iter_sync`")
+        raise TypeError("SSE streaming needs `AsyncTransport`; drive it from sync code with `fastcore.aio.iter_sync`")
 
     def _client(self):
         if self.client: return nullcontext(self.client)
