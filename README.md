@@ -11,9 +11,7 @@ pip install fastspec
 
 ## Quick Start
 
-fastspec turns any OpenAPI (or Google Discovery) spec into a fully async
-Python client. Load a spec, create a client, and call any endpoint with
-attribute chaining.
+fastspec turns any OpenAPI (or Google Discovery) spec into a fully async Python client. Load a spec, create a client, and call any endpoint with attribute chaining.
 
 ### Loading Specs
 
@@ -44,8 +42,7 @@ ant_spec, oai_spec, gh_spec, gem_spec
 
 ### Creating Clients
 
-Pass a parsed spec and any required auth headers to
-[`OpenAPIClient`](https://AnswerDotAI.github.io/fastspec/oapi.html#openapiclient):
+Pass a parsed spec and any required auth headers to [`OpenAPIClient`](https://AnswerDotAI.github.io/fastspec/oapi.html#openapiclient):
 
 ``` python
 ant_cli = OpenAPIClient(ant_spec, headers={"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"})
@@ -55,8 +52,7 @@ gh_cli  = OpenAPIClient(gh_spec,  headers={"Authorization": f"token {os.environ[
 
 ### Exploring Operations
 
-Every client organizes endpoints into groups. Use `doc()` to browse
-what’s available:
+Every client organizes endpoints into groups. Use `doc()` to browse what’s available:
 
 ``` python
 ant_cli.messages
@@ -64,42 +60,21 @@ ant_cli.messages
 
 <div class="prose" markdown="1">
 
-- [messages.messages_post](https://docs.claude.com/en/docs/initial-setup)(model,
-  messages, max_tokens, cache_control, container, inference_geo,
-  metadata, output_config, service_tier, stop_sequences, stream, system,
-  temperature, thinking, tool_choice, tools, top_k, top_p): *Create a
-  Message*
-- [messages.message_batches_post](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(requests):
-  *Create a Message Batch*
-- [messages.message_batches_list](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(before_id,
-  after_id, limit): *List Message Batches*
-- [messages.message_batches_retrieve](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Retrieve a Message Batch*
-- [messages.message_batches_delete](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Delete a Message Batch*
-- [messages.message_batches_cancel](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Cancel a Message Batch*
-- [messages.message_batches_results](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Retrieve Message Batch results*
-- [messages.messages_count_tokens_post](https://docs.claude.com/en/docs/build-with-claude/token-counting)(messages,
-  model, cache_control, output_config, system, thinking, tool_choice,
-  tools): *Count tokens in a Message*
-- [messages.beta_message_batches_post](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(requests):
-  *Create a Message Batch*
-- [messages.beta_message_batches_list](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(before_id,
-  after_id, limit): *List Message Batches*
-- [messages.beta_message_batches_retrieve](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Retrieve a Message Batch*
-- [messages.beta_message_batches_delete](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Delete a Message Batch*
-- [messages.beta_message_batches_cancel](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Cancel a Message Batch*
-- [messages.beta_message_batches_results](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id):
-  *Retrieve Message Batch results*
-- [messages.beta_messages_count_tokens_post](https://docs.claude.com/en/docs/build-with-claude/token-counting)(messages,
-  model, cache_control, context_management, mcp_servers, output_config,
-  output_format, speed, system, thinking, tool_choice, tools): *Count
-  tokens in a Message*
+- [messages.messages_post](https://docs.claude.com/en/docs/initial-setup)(model, messages, max_tokens, cache_control, container, inference_geo, metadata, output_config, service_tier, stop_sequences, stream, system, temperature, thinking, tool_choice, tools, top_k, top_p): *Create a Message*
+- [messages.message_batches_post](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(requests): *Create a Message Batch*
+- [messages.message_batches_list](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(before_id, after_id, limit): *List Message Batches*
+- [messages.message_batches_retrieve](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Retrieve a Message Batch*
+- [messages.message_batches_delete](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Delete a Message Batch*
+- [messages.message_batches_cancel](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Cancel a Message Batch*
+- [messages.message_batches_results](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Retrieve Message Batch results*
+- [messages.messages_count_tokens_post](https://docs.claude.com/en/docs/build-with-claude/token-counting)(messages, model, cache_control, output_config, system, thinking, tool_choice, tools): *Count tokens in a Message*
+- [messages.beta_message_batches_post](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(requests): *Create a Message Batch*
+- [messages.beta_message_batches_list](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(before_id, after_id, limit): *List Message Batches*
+- [messages.beta_message_batches_retrieve](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Retrieve a Message Batch*
+- [messages.beta_message_batches_delete](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Delete a Message Batch*
+- [messages.beta_message_batches_cancel](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Cancel a Message Batch*
+- [messages.beta_message_batches_results](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Retrieve Message Batch results*
+- [messages.beta_messages_count_tokens_post](https://docs.claude.com/en/docs/build-with-claude/token-counting)(messages, model, cache_control, context_management, mcp_servers, output_config, output_format, speed, system, thinking, tool_choice, tools): *Count tokens in a Message*
 
 </div>
 
@@ -113,7 +88,8 @@ ant_cli.models.models_get
 
 Get a Model
 
-Parameters: - model_id (str, required): Model identifier or alias.
+Parameters:
+- model_id (str, required): Model identifier or alias.
 
 </div>
 
@@ -184,8 +160,7 @@ async for ev in resp: print(ev.get('delta', ''), end='')
 
 ## Gemini
 
-Google Discovery specs use nested resource groups with attribute
-chaining:
+Google Discovery specs use nested resource groups with attribute chaining:
 
 ``` python
 gem_cli = OpenAPIClient(gem_spec, headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"]})
@@ -211,22 +186,16 @@ gem_cli.tuned_models.permissions.create
 
 Create a permission to a specific resource.
 
-Parameters: - parent (str, required): Required. The parent resource of
-the `Permission`. Formats: `tunedModels/{tuned_model}`
-`corpora/{corpus}` - role (str, required): Required. The role granted by
-this permission. - name (str, optional): Output only. Identifier. The
-permission name. A unique name will be generated on create. Examples:
-tunedModels/{tuned_model}/permissions/{permission}
-corpora/{corpus}/permissions/{permission} Output only. - grantee_type
-(str, optional): Optional. Immutable. The type of the grantee. -
-email_address (str, optional): Optional. Immutable. The email address of
-the user of group which this permission refers. Field is not set when
-permission’s grantee type is EVERYONE.
+Parameters:
+- parent (str, required): Required. The parent resource of the `Permission`. Formats: `tunedModels/{tuned_model}` `corpora/{corpus}`
+- role (str, required): Required. The role granted by this permission.
+- name (str, optional): Output only. Identifier. The permission name. A unique name will be generated on create. Examples: tunedModels/{tuned_model}/permissions/{permission} corpora/{corpus}/permissions/{permission} Output only.
+- grantee_type (str, optional): Optional. Immutable. The type of the grantee.
+- email_address (str, optional): Optional. Immutable. The email address of the user of group which this permission refers. Field is not set when permission’s grantee type is EVERYONE.
 
 ## GitHub
 
-Route parameters (like `{owner}` and `{repo}`) are passed as regular
-function arguments:
+Route parameters (like `{owner}` and `{repo}`) are passed as regular function arguments:
 
 ``` python
 resp = await gh_cli.repos.get(owner="AnswerDotAI", repo="fastcore")
@@ -243,27 +212,18 @@ Get a repository
 
 Docs: https://docs.github.com/rest/repos/repos#get-a-repository
 
-Parameters: - owner (str, required): The account owner of the
-repository. The name is not case sensitive. - repo (str, required): The
-name of the repository without the `.git` extension. The name is not
-case sensitive.
+Parameters:
+- owner (str, required): The account owner of the repository. The name is not case sensitive.
+- repo (str, required): The name of the repository without the `.git` extension. The name is not case sensitive.
 
 ## AI Tool Integration (`python`)
 
-fastspec clients can be made available to AI assistants via
-[solveit](https://github.com/AnswerDotAI/solveit)’s `python` sandbox
-using `allow()`. Registering an op lets the sandboxed code call it
-(including the network access it needs); everything else stays blocked.
-Four levels of access are supported:
-
-``` python
-from safepyrun.core import allow
-```
+fastspec clients can be made available to AI assistants via [solveit](https://github.com/AnswerDotAI/solveit)’s `python` sandbox using `allow()`. Registering an op lets the sandboxed code call it (including the network access it needs); everything else stays blocked. Four levels of access are supported:
 
 **Single method access** — lock down to specific operations:
 
 ``` python
-allow(oai_cli.images.create_image);
+allow(oai_cli.images.create_image)
 ```
 
 **Single group access** — only specific groups:
@@ -278,9 +238,7 @@ allow(oai_cli.chat)
 allow(oai_cli)
 ```
 
-**Full API access** — every operation on every client (any
-[`OpFunc`](https://AnswerDotAI.github.io/fastspec/oapi.html#opfunc) may
-run):
+**Full API access** — every operation on every client (any [`OpFunc`](https://AnswerDotAI.github.io/fastspec/oapi.html#opfunc) may run):
 
 ``` python
 allow({OpFunc: ['__call__']})
