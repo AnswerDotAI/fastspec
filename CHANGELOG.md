@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.1.1
+
+### Bugs Squashed
+
+- fix: walk anyOf/oneOf in `_schema_props_required` ([#14](https://github.com/AnswerDotAI/fastspec/pull/14)), thanks to [@jackhogan](https://github.com/jackhogan)
+
+
 ## 0.1.0
 
 ### New Features
