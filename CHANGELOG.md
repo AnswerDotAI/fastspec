@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.1.2
+
+### New Features
+
+- Add `__dir__` to OpGroup and OpenAPIClient to control attribute discovery ([#17](https://github.com/AnswerDotAI/fastspec/issues/17))
+
+
 ## 0.1.1
 
 ### Bugs Squashed
@@ -68,5 +75,3 @@
 - Preserve OpenAPI request content type and encode bodies accordingly ([#1](https://github.com/AnswerDotAI/fastspec/issues/1))
 - `metadata={"kind": "subscription"}` -> `metadata[kind]=subscription`
 - `items=[{"price": "price_..."}]` -> `items[0][price]=price_...`
-
-
