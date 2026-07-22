@@ -229,7 +229,9 @@ class OpGroup:
             setattr(self, op.name, op)
             if hasattr(op, '__signature__'): repr_md.append(f"- {_op_line(op, op.__signature__)}")
         self.__doc__ = "\n".join(repr_md)
-    
+
+    def __dir__(self): return object.__dir__(self)
+
     def _repr_markdown_(self): return self.__doc__
     __repr__ = _repr_markdown_
 
@@ -261,6 +263,8 @@ class OpenAPIClient:
         self.func_dict = {f"{o.path}:{o.verb.upper()}": o for o in self.ops}
         self.groups = _build_groups(self.ops)
         for k,v in self.groups.items(): setattr(self, k, v)
+
+    def __dir__(self): return object.__dir__(self)
 
 # %% ../nbs/04_oapi.ipynb #3526834b
 def _group_docs(name, g, lvl=2):
