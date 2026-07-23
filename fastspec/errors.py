@@ -134,7 +134,7 @@ class APIError(FastSpecError):
         )
 
     def __str__(self):
-        fields = ['message', 'provider', 'model', 'endpoint', 'status_code', 'error_type', 'code', 'request_id', 'retryable']
+        fields = ['message', 'provider', 'model', 'endpoint', 'status_code', 'error_type', 'code', 'request_id', 'retryable', 'raw']
         parts = [f"{f}={getattr(self, f)!r}" for f in fields if getattr(self, f) not in (None, "", False)]
         return f"APIError({', '.join(parts)})"
 
