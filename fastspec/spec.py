@@ -139,6 +139,7 @@ def _schema_py_type(schema, spec):
     if not isinstance(schema, dict): return None
     schema = _resolve_obj(schema, spec)
     t = schema.get("type")
+    if isinstance(t, L): t = first(t.filter(lambda x: x != 'null'))
     if t == "string" and schema.get("format") == "binary": return bytes
     if t in _type_map: return _type_map[t]
     if t == "null": return type(None)
