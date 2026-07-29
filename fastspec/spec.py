@@ -105,8 +105,7 @@ def _resolve_obj(obj, spec):
 # %% ../nbs/03_spec.ipynb #d4a663d2
 def _clean_desc(v):
     "Normalize a description string to a compact one-liner."
-    if not isinstance(v, str):
-        return ""
+    if not isinstance(v, str): return ""
     return " ".join(v.strip().split())
 
 # %% ../nbs/03_spec.ipynb #ae82feda
@@ -118,8 +117,7 @@ def _schema_props_required(schema, spec):
     schema = _resolve_obj(schema, spec)
     props = schema.get("properties", {})
     req = set(schema.get("required", []))
-    if not req: 
-        req = {k for k,v in props.items() if _pat_req.match(v.get("description", ""))}
+    if not req: req = {k for k,v in props.items() if _pat_req.match(v.get("description", ""))}
     for sub in schema.get("allOf", []):
         p, r = _schema_props_required(sub, spec)
         props = merge(props, p)
@@ -173,8 +171,7 @@ def _collect_params(op, path_desc, spec):
         p = _resolve_obj(p, spec)
         nm, where = str(p.get("name", "")).lstrip("+"), p.get("in")
         if not nm: continue
-        if where == "path" and nm not in route:
-            route.append(nm); req.add(nm)
+        if where == "path" and nm not in route: route.append(nm)
         elif where == "query" and nm not in query:
             query.append(nm)
             if p.get("required"): req.add(nm)
@@ -185,8 +182,7 @@ def _collect_params(op, path_desc, spec):
             if d is not _MISSING: defaults[nm] = d
         desc = _clean_desc(p.get("description"))
         if desc: pdocs[nm] = desc
-    return AttrDict(route_params=route, query_params=query, required_params=req, 
-                    param_types=ptypes, param_docs=pdocs, param_defaults=defaults)
+    return AttrDict(route_params=route, query_params=query, required_params=req | set(route), param_types=ptypes, param_docs=pdocs, param_defaults=defaults)
 
 # %% ../nbs/03_spec.ipynb #b438a359
 def _prop_desc(v, spec):
@@ -197,8 +193,7 @@ def _prop_desc(v, spec):
     for key in ("anyOf", "oneOf"):
         for sub in v.get(key, []):
             sub = _resolve_obj(sub, spec)
-            if sub.get("type") != "null" and sub.get("description"):
-                return _clean_desc(sub["description"])
+            if sub.get("type") != "null" and sub.get("description"): return _clean_desc(sub["description"])
     return ""
 
 # %% ../nbs/03_spec.ipynb #415c96a8
@@ -211,7 +206,8 @@ def _body_params(op, spec):
     ct = first((ct for ct in ctypes if ct in content), None)
     schema = content.get(ct, {}).get("schema") if ct else None
     if not schema:
-        return AttrDict(body_params=[], file_params=[], required_params=set(), param_types={}, param_docs={}, param_defaults={}, request_content_type=ct)
+        return AttrDict(body_params=[], file_params=[], required_params=set(), param_types={},
+            param_docs={}, param_defaults={}, request_content_type=ct)
     props, req = _schema_props_required(schema, spec)
     fparams = [k for k,v in props.items() if _resolve_obj(v, spec).get("format") == "binary"]
     bparams = [k for k in props if k not in fparams]
@@ -219,8 +215,9 @@ def _body_params(op, spec):
     pdocs = {k: d for k,v in props.items() if (d := _prop_desc(v, spec))}
     defaults = {k: d for k,v in props.items() if (d := _prop_default(v, spec)) is not _MISSING}
     # Params without a default or nullable type are required
-    # req |= {k for k in props if k not in defaults} # too aggresive doesn't match when spec is incomplete
-    return AttrDict(body_params=bparams, file_params=fparams, required_params=req, param_types=ptypes, param_docs=pdocs, param_defaults=defaults, request_content_type=ct)
+    # req |= {k for k in props if k not in defaults} # too aggressive doesn't match when spec is incomplete
+    return AttrDict(body_params=bparams, file_params=fparams, required_params=req, param_types=ptypes,
+        param_docs=pdocs, param_defaults=defaults, request_content_type=ct)
 
 # %% ../nbs/03_spec.ipynb #9ab326f7
 _pat_md_url = re.compile(r"\[[^\]]+\]\((https?://[^)\s]+)\)")
@@ -272,43 +269,32 @@ def openapi_to_ops(spec, group_func=None):
             group, name = (group_func or _group_name)(op_id, path, verb, path_tags, op_tags)
             pdict, bpdict = _collect_params(op, path_desc, spec), _body_params(op, spec)
             pdict, bpdict = _dedupe_params(pdict, bpdict)
-            res.append(
-                OpSpec(
-                    group=group,
-                    name=name,
-                    path=path,
-                    verb=verb.upper(),
-                    summary=str(op.get("summary") or ""),
-                    route_params=pdict.route_params or _path_params(path),
-                    query_params=pdict.query_params,
-                    body_params=bpdict.body_params,
-                    file_params=bpdict.file_params,
-                    request_content_type=bpdict.request_content_type or "",
-                    required_params=sorted(pdict.required_params | bpdict.required_params),
-                    param_types={k:v for k,v in merge(pdict.param_types, bpdict.param_types).items() if v},
-                    param_defaults=_plain(merge(pdict.param_defaults, bpdict.param_defaults)),
-                    param_docs=merge(pdict.param_docs, bpdict.param_docs),
-                    docs_url=_op_docs_url(op) or ""
-                )
-            )
+            res.append(OpSpec(group=group, name=name, path=path, verb=verb.upper(), summary=str(op.get("summary") or ""),
+                route_params=pdict.route_params or _path_params(path), query_params=pdict.query_params,
+                body_params=bpdict.body_params, file_params=bpdict.file_params, request_content_type=bpdict.request_content_type or "",
+                required_params=sorted(pdict.required_params | bpdict.required_params),
+                param_types={k:v for k,v in merge(pdict.param_types, bpdict.param_types).items() if v},
+                param_defaults=_plain(merge(pdict.param_defaults, bpdict.param_defaults)), param_docs=merge(pdict.param_docs, bpdict.param_docs),
+                docs_url=_op_docs_url(op) or ""))
     return res
 
 # %% ../nbs/03_spec.ipynb #78ea6617
 def _discovery_collect_params(m, spec):
-    "Collect route and query params from a Discovery method dict."
+    "Collect route and query params from a Discovery method dict, merging in the spec's global `parameters`."
     route, query, req, ptypes, pdocs, defaults = [], [], set(), {}, {}, {}
-    for nm, pd in (m.get("parameters") or {}).items():
+    params = dict(m.get("parameters") or {})
+    for nm, pd in (spec.get("parameters") or {}).items(): params.setdefault(nm, pd)
+    for nm, pd in params.items():
         if not isinstance(pd, dict): continue
         loc = str(pd.get("location") or "")
-        if loc == "path" and nm not in route: route.append(nm); req.add(nm)
+        if loc == "path" and nm not in route: route.append(nm)
         elif loc == "query" and nm not in query:
             query.append(nm)
             if pd.get("required"): req.add(nm)
         ptypes[nm] = _schema_py_type(pd, spec)
         desc = _clean_desc(pd.get("description"))
         if desc: pdocs[nm] = desc
-    return AttrDict(route_params=route, query_params=query, required_params=req,
-                param_types=ptypes, param_docs=pdocs, param_defaults=defaults)
+    return AttrDict(route_params=route, query_params=query, required_params=req | set(route), param_types=ptypes, param_docs=pdocs, param_defaults=defaults)
 
 def _discovery_body_params(m, schemas, spec):
     "Extract body params from a Discovery method's request field."
@@ -319,8 +305,7 @@ def _discovery_body_params(m, schemas, spec):
     ptypes = {k: _schema_py_type(v, spec) for k,v in props.items()}
     pdocs = {k: d for k,v in props.items() if (d := _prop_desc(v, spec))}
     defaults = {k: d for k,v in props.items() if (d := _prop_default(v, spec)) is not _MISSING}
-    return AttrDict(body_params=list(props), required_params=req, param_types=ptypes,
-                param_docs=pdocs, param_defaults=defaults)
+    return AttrDict(body_params=list(props), required_params=req, param_types=ptypes, param_docs=pdocs, param_defaults=defaults)
 
 # %% ../nbs/03_spec.ipynb #54e889f2
 def discovery_to_ops(spec):
@@ -334,18 +319,12 @@ def discovery_to_ops(spec):
             path = m.get("path")
             pdict = _discovery_collect_params(m, spec)
             bpdict = _discovery_body_params(m, schemas, spec)
-            ops.append(OpSpec(
-                group=group, name=snake(mname), path=path, verb=verb,
-                summary=_clean_desc(m.get("description", "")),
-                route_params=pdict.route_params or _path_params(path),
-                query_params=pdict.query_params,
-                body_params=bpdict.body_params,
+            ops.append(OpSpec(group=group, name=snake(mname), path=path, verb=verb, summary=_clean_desc(m.get("description", "")),
+                route_params=pdict.route_params or _path_params(path), query_params=pdict.query_params, body_params=bpdict.body_params,
                 required_params=sorted(pdict.required_params | bpdict.required_params),
                 param_types={k:v for k,v in merge(pdict.param_types, bpdict.param_types).items() if v},
-                param_defaults=_plain(merge(pdict.param_defaults, bpdict.param_defaults)),
-                param_docs=merge(pdict.param_docs, bpdict.param_docs),
-                docs_url=str(m.get("documentationLink", ""))
-            ))
+                param_defaults=_plain(merge(pdict.param_defaults, bpdict.param_defaults)), param_docs=merge(pdict.param_docs, bpdict.param_docs),
+                docs_url=str(m.get("documentationLink", ""))))
         for rname, child in res.get("resources", {}).items(): walk(child, group + [rname])
     for rname, res in spec.get("resources", {}).items(): walk(res, [rname])
     return ops
@@ -387,5 +366,4 @@ class SpecParser:
         Path(path).write_text(txt)
 
     # TODO: Ideally this should show how to init the object 
-    def __repr__(self):
-        return f"SpecParser(base_url={self.base_url!r}, ops={len(self.ops)})"
+    def __repr__(self): return f"SpecParser(base_url={self.base_url!r}, ops={len(self.ops)})"
