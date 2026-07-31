@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ['fastcore>=1.14.6', 'httpx']
+dependencies = ['fastcore>=2.1.16', 'httpx']
 
 [project.optional-dependencies]
 dev = ['safepyrun>=0.2.3', 'pyskills>=0.0.17']
