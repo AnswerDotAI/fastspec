@@ -2,6 +2,18 @@
 
 <!-- do not remove -->
 
+## 0.1.3
+
+### New Features
+
+- Move API surface helpers (snake, `sanitized_params`, `mk_sig`, `mk_doc`, OpGroup, group building, `full_docs`) to fastcore.apisurface ([#21](https://github.com/AnswerDotAI/fastspec/issues/21))
+- Include raw field in APIError string representation ([#19](https://github.com/AnswerDotAI/fastspec/pull/19)), thanks to [@kafkasl](https://github.com/kafkasl)
+
+### Bugs Squashed
+
+- Fix `_schema_py_type` for OpenAPI 3.1 nullable type lists ([#18](https://github.com/AnswerDotAI/fastspec/pull/18)), thanks to [@kafkasl](https://github.com/kafkasl)
+
+
 ## 0.1.2
 
 ### New Features
