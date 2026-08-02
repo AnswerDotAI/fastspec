@@ -134,6 +134,7 @@ def _prep(self:OpFunc, args, kwargs):
     elif self.request_content_type == "application/x-www-form-urlencoded": kw = dict(body=None, data=self.form_encoder(body))
     else: kw = dict(body=body)
     if kwargs.get("raw"): kw["raw"] = True
+    if stream and kw.get("raw"): raise TypeError("raw=True can't be combined with stream=True")
     return stream, url, headers, query, route, kw
 
 @patch
