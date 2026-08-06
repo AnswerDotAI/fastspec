@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.1.5
+
+### New Features
+
+- Fix OpFunc.`_bind` to skip params covered by client defaults when binding positional args, and raise TypeError on too many ([#23](https://github.com/AnswerDotAI/fastspec/issues/23))
+
 
 ## 0.1.4
 
