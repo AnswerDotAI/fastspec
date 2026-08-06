@@ -49,8 +49,12 @@ class OpFunc:
 # %% ../nbs/04_oapi.ipynb #6e381df4
 @patch
 def _bind(self:OpFunc, args, kwargs):
-    'Prepare kwargs from args and kwargs'
-    flds = [o for o in self.__signature__.parameters if o not in kwargs]
+    'Prepare kwargs from args and kwargs; params covered by a call-time default take no positional'
+    rsp = {v:k for k,v in self.sparams.items()}
+    flds = [o for o in self.__signature__.parameters if o not in kwargs and rsp.get(o,o) not in self.defaults]
+    if len(args) > len(flds):
+        cov = [o for o in self.__signature__.parameters if rsp.get(o,o) in self.defaults]
+        raise TypeError(f"{self.name}: too many positional args; {', '.join(cov)} are covered by client defaults -- pass by keyword to override")
     for a,b in zip(args, flds): kwargs[b] = a
     return kwargs
 
