@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.0
+
+### Breaking Changes
+
+- Rename oapi control kwargs to trailing-underscore form (`headers_`, `query_`, `raw_`), drop `_body` passthrough ([#26](https://github.com/AnswerDotAI/fastspec/issues/26))
+
+
 ## 0.1.7
 
 ### New Features
