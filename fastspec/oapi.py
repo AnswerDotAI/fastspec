@@ -63,7 +63,7 @@ def _bind(self:OpFunc, args, kwargs):
 def _split(self:OpFunc, kwargs):
     "Split kwargs into route/query/body/files + control kwargs."
     stream = kwargs.get("stream", False)
-    headers = kwargs.pop("_headers", {})
+    headers = kwargs.pop("headers_", {})
     # Map sanitized names back to originals
     rsparams = {v:k for k,v in self.sparams.items()}
 
@@ -80,8 +80,7 @@ def _split(self:OpFunc, kwargs):
         if   k in self.route_params: route.setdefault(k, v)
         elif k in self.query_params: query.setdefault(k, v)
 
-    query.update(kwargs.pop("_query", {}))
-    body.update(kwargs.pop("_body", {}))
+    query.update(kwargs.pop("query_", {}))
     if self.verb in ("GET", "DELETE", "HEAD", "OPTIONS") and not body: body = None
     return stream, headers, route, query, body, files
 
@@ -137,8 +136,8 @@ def _prep(self:OpFunc, args, kwargs):
     if files: kw = dict(body=None, files=files, data=self.form_encoder(body) or None)
     elif self.request_content_type == "application/x-www-form-urlencoded": kw = dict(body=None, data=self.form_encoder(body))
     else: kw = dict(body=body)
-    if kwargs.get("raw"): kw["raw"] = True
-    if stream and kw.get("raw"): raise TypeError("raw=True can't be combined with stream=True")
+    if kwargs.get("raw_"): kw["raw"] = True
+    if stream and kw.get("raw"): raise TypeError("raw_=True can't be combined with stream=True")
     return stream, url, headers, query, route, kw
 
 @patch
