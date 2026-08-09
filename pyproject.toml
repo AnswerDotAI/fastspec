@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fastspec"
 dynamic = ["version"]
-description = "Dynamic OpenAPI and discovery spec client for Python — turn any API spec into a fully-typed async client with attribute chaining, streaming, and file uploads"
+description = "Dynamic OpenAPI, Discovery, and GraphQL spec client for Python — turn any API spec into a fully-typed async client with attribute chaining, streaming, and file uploads"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"

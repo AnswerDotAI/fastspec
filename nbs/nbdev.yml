@@ -4,6 +4,6 @@ project:
 website:
   title: "fastspec"
   site-url: "https://AnswerDotAI.github.io/fastspec"
-  description: "Dynamic OpenAPI and discovery spec client for Python — turn any API spec into a fully-typed async client with attribute chaining, streaming, and file uploads"
+  description: "Dynamic OpenAPI, Discovery, and GraphQL spec client for Python — turn any API spec into a fully-typed async client with attribute chaining, streaming, and file uploads"
   repo-branch: main
   repo-url: "https://github.com/AnswerDotAI/fastspec"

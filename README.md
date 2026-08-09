@@ -18,7 +18,10 @@ fastspec turns any OpenAPI (or Google Discovery) spec into a fully async Python 
 fastspec supports both OpenAPI (JSON/YAML) and Google Discovery specs:
 
 ``` python
-import yaml
+from fastcore.utils import *
+from fastspec.oapi import *
+from fastspec.spec import *
+import json, yaml
 ```
 
 ``` python
@@ -42,7 +45,7 @@ ant_spec, oai_spec, gh_spec, gem_spec
 
 ### Creating Clients
 
-Pass a parsed spec and any required auth headers to [`OpenAPIClient`](https://AnswerDotAI.github.io/fastspec/oapi.html#openapiclient):
+Pass a parsed spec and any required auth headers to [`OpenAPIClient`](https://AnswerDotAI.github.io/fastspec/oapi.html#openapiclient). The examples on this page authenticate from environment variables – `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, and `GITHUB_TOKEN` – so set the ones you need for the providers you use:
 
 ``` python
 ant_cli = OpenAPIClient(ant_spec, headers={"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"})
@@ -57,8 +60,6 @@ Every client organizes endpoints into groups. Use `doc()` to browse what’s ava
 ``` python
 ant_cli.messages
 ```
-
-<div class="prose" markdown="1">
 
 - [messages.messages_post](https://docs.claude.com/en/docs/initial-setup)(model, messages, max_tokens, cache_control, container, inference_geo, metadata, output_config, service_tier, stop_sequences, stream, system, temperature, thinking, tool_choice, tools, top_k, top_p): *Create a Message*
 - [messages.message_batches_post](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(requests): *Create a Message Batch*
@@ -76,22 +77,16 @@ ant_cli.messages
 - [messages.beta_message_batches_results](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Retrieve Message Batch results*
 - [messages.beta_messages_count_tokens_post](https://docs.claude.com/en/docs/build-with-claude/token-counting)(messages, model, cache_control, context_management, mcp_servers, output_config, output_format, speed, system, thinking, tool_choice, tools): *Count tokens in a Message*
 
-</div>
-
 Drill into any operation to see its full signature and parameter docs:
 
 ``` python
 ant_cli.models.models_get
 ```
 
-<div class="prose" markdown="1">
-
 Get a Model
 
 Parameters:
 - model_id (str, required): Model identifier or alias.
-
-</div>
 
 ## Anthropic
 
@@ -167,7 +162,7 @@ gem_cli = OpenAPIClient(gem_spec, headers={"x-goog-api-key": os.environ["GEMINI_
 str(gem_cli.models)[:500]
 ```
 
-    '- models.generate_content(model, contents, system_instruction, tools, tool_config, safety_settings, generation_config, cached_content, service_tier, store): *Generates a model response given an input `GenerateContentRequest`. Refer to the [text generation guide](https://ai.google.dev/gemini-api/docs/text-generation) for detailed usage information. Input capabilities differ between models, including tuned models. Refer to the [model guide](https://ai.google.dev/gemini-api/docs/models/gemini) and '
+    '- models.generate_content(model, contents, access_token, alt, callback, fields, key, oauth_token, pretty_print, quota_user, upload_protocol, upload_type, xgafv, system_instruction, tools, tool_config, safety_settings, generation_config, cached_content, service_tier, store): *Generates a model response given an input `GenerateContentRequest`. Refer to the [text generation guide](https://ai.google.dev/gemini-api/docs/text-generation) for detailed usage information. Input capabilities differ betwee'
 
 ``` python
 resp = await gem_cli.models.generate_content(
@@ -189,6 +184,17 @@ Create a permission to a specific resource.
 Parameters:
 - parent (str, required): Required. The parent resource of the `Permission`. Formats: `tunedModels/{tuned_model}` `corpora/{corpus}`
 - role (str, required): Required. The role granted by this permission.
+- access_token (str, optional): OAuth access token.
+- alt (str, optional): Data format for response.
+- callback (str, optional): JSONP
+- fields (str, optional): Selector specifying which fields to include in a partial response.
+- key (str, optional): API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.
+- oauth_token (str, optional): OAuth 2.0 token for the current user.
+- pretty_print (bool, optional): Returns response with indentations and line breaks.
+- quota_user (str, optional): Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters.
+- upload_protocol (str, optional): Upload protocol for media (e.g. “raw”, “multipart”).
+- upload_type (str, optional): Legacy upload protocol for media (e.g. “media”, “multipart”).
+- xgafv (str, optional): V1 error format.
 - name (str, optional): Output only. Identifier. The permission name. A unique name will be generated on create. Examples: tunedModels/{tuned_model}/permissions/{permission} corpora/{corpus}/permissions/{permission} Output only.
 - grantee_type (str, optional): Optional. Immutable. The type of the grantee.
 - email_address (str, optional): Optional. Immutable. The email address of the user of group which this permission refers. Field is not set when permission’s grantee type is EVERYONE.
@@ -202,7 +208,7 @@ resp = await gh_cli.repos.get(owner="AnswerDotAI", repo="fastcore")
 resp['full_name'], resp['description'], resp['stargazers_count']
 ```
 
-    ('AnswerDotAI/fastcore', 'Python supercharged for the fastai library', 1101)
+    ('AnswerDotAI/fastcore', 'Python supercharged for the fastai library', 1100)
 
 ``` python
 gh_cli.repos.get
@@ -215,6 +221,27 @@ Docs: https://docs.github.com/rest/repos/repos#get-a-repository
 Parameters:
 - owner (str, required): The account owner of the repository. The name is not case sensitive.
 - repo (str, required): The name of the repository without the `.git` extension. The name is not case sensitive.
+
+## GraphQL
+
+The same spec-to-client philosophy covers GraphQL: distill an endpoint’s introspection answer once into a [`GqlSpec`](https://AnswerDotAI.github.io/fastspec/gql.html#gqlspec), and [`GqlClient`](https://AnswerDotAI.github.io/fastspec/gql.html#gqlclient) builds schema-checked queries by attribute chaining – args as kwargs, selection as chaining – with `batch` running many queries as a single request. Here, the head commit of three repos in one round trip (see the [gql page](https://answerdotai.github.io/fastspec/gql.html) for discovery, raw queries, and error handling):
+
+``` python
+from fastspec.gql import GqlSpec, GqlClient, INTROSPECT
+from fastspec.transport import AsyncTransport
+```
+
+``` python
+gh_hdrs = {"Authorization": f"bearer {os.environ['GITHUB_TOKEN']}"}
+raw = await AsyncTransport(base_headers=gh_hdrs).request('POST', 'https://api.github.com/graphql', json_data=dict(query=INTROSPECT))
+gql = GqlClient(GqlSpec.from_introspection(raw), 'https://api.github.com/graphql', headers=gh_hdrs)
+await gql.batch(*[gql.repository(owner='AnswerDotAI', name=n).defaultBranchRef.target.oid
+    for n in ('fastcore', 'fasthtml', 'ghapi')])
+```
+
+    ['25c4f3228ccac3c5a63da71b5eaa4be3c428f602',
+     'e5d967ae627c63035e296e6f319f220e278327e7',
+     '4ca8469d7c2ccc42cb71e30a576c719f306b5cf7']
 
 ## AI Tool Integration (`python`)
 
@@ -243,3 +270,7 @@ allow(oai_cli)
 ``` python
 allow({OpFunc: ['__call__']})
 ```
+
+## Going deeper
+
+Parsed specs serialize to a compact form ([`SpecParser.to_dict`](https://AnswerDotAI.github.io/fastspec/spec.html#specparser.to_dict)/`save`/`from_dict`), so a client package can ship a pre-parsed spec and skip the multi-megabyte original at runtime – this is how [ghapi](https://ghapi.fast.ai) stays small while covering GitHub’s full API, for both its REST and GraphQL surfaces ([`GqlSpec`](https://AnswerDotAI.github.io/fastspec/gql.html#gqlspec) gives GraphQL schemas the same treatment). Under the hood, requests flow through dedicated layers for [error handling](https://answerdotai.github.io/fastspec/errors.html), [SSE streaming](https://answerdotai.github.io/fastspec/sse.html), and [transport](https://answerdotai.github.io/fastspec/transport.html), each documented on its own page.
