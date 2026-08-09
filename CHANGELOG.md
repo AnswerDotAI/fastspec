@@ -2,6 +2,14 @@
 
 <!-- do not remove -->
 
+## 0.1.7
+
+### New Features
+
+- Add chunked parallel batching and paged() cursor iteration for Relay connections to GqlClient ([#25](https://github.com/AnswerDotAI/fastspec/issues/25))
+- Add fastspec.gql: GraphQL client with distilled schema specs, attribute-chained queries, and batched requests ([#24](https://github.com/AnswerDotAI/fastspec/issues/24))
+
+
 ## 0.1.6
 
 ### New Features
