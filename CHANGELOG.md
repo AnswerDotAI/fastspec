@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.1
+
+### New Features
+
+- Move transport and SSE into external fasttransport package, switch httpx to httpx2, and rename `json_data` param to json ([#27](https://github.com/AnswerDotAI/fastspec/issues/27))
+
+
 ## 0.2.0
 
 ### Breaking Changes
