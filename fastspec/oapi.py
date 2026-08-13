@@ -8,7 +8,7 @@ Docs: https://AnswerDotAI.github.io/fastspec/oapi.html.md"""
 __all__ = ['OpFunc', 'SyncOpFunc', 'OpenAPIClient']
 
 # %% ../nbs/04_oapi.ipynb #632a2010
-import httpx,json
+import httpx2,json
 from urllib.parse import urljoin, quote
 from fastcore.utils import *
 from fastcore.meta import delegates
@@ -16,7 +16,7 @@ from fastcore.apisurface import snake, sanitized_params, mk_sig, mk_doc, OpGroup
 
 from .errors import APIError
 from .spec import OpSpec, SpecParser
-from .transport import AsyncTransport,SyncTransport
+from fasttransport.core import AsyncTransport,SyncTransport
 
 
 # %% ../nbs/04_oapi.ipynb #6b2f1057
@@ -106,7 +106,7 @@ def _raise_with_context(self:OpFunc, exc:Exception, *, endpoint:str, route:Optio
     "Raise APIError with operation context for dynamic op calls."
     provider,model,ep = '','',''
     # TODO: Make APIError generic, users can modify/subclass it include additional info like model,provider etc..
-    if isinstance(exc, (httpx.HTTPStatusError, httpx.RequestError)):
+    if isinstance(exc, (httpx2.HTTPStatusError, httpx2.RequestError)):
         raise exc.api_error(provider=provider, model=model) from exc
     raise exc
 
@@ -116,7 +116,7 @@ def _raise_with_context(self:OpFunc, exc:Exception, *, endpoint:str, route:Optio
 @delegates(AsyncTransport.request) # files, raw
 async def _request(self:OpFunc, url, *, headers=None, query=None, body=None, route=None, **kwargs):
     "Execute an HTTP request and return decoded response."
-    try: return dict2obj(await self.client.request(self.verb, url, headers=headers, params=query, json_data=body, **kwargs))
+    try: return dict2obj(await self.client.request(self.verb, url, headers=headers, params=query, json=body, **kwargs))
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 @patch
@@ -124,7 +124,7 @@ async def _request(self:OpFunc, url, *, headers=None, query=None, body=None, rou
 async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, route=None, **kwargs):
     "Execute an SSE request yielding parsed JSON events."
     try:
-        async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json_data=body, **kwargs): yield dict2obj(ev)
+        async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json=body, **kwargs): yield dict2obj(ev)
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 # %% ../nbs/04_oapi.ipynb #0296d943
@@ -153,7 +153,7 @@ class SyncOpFunc(OpFunc):
         stream, url, headers, query, route, kw = self._prep(args, kwargs)
         if stream: raise TypeError("stream=True needs an async client; or wrap the async client with `fastcore.aio.iter_sync`")
         body = kw.pop('body')
-        try: return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json_data=body, **kw))
+        try: return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json=body, **kw))
         except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 # %% ../nbs/04_oapi.ipynb #d4ff9dd9

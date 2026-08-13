@@ -19,7 +19,7 @@ __all__ = ['INTROSPECT', 'distill', 'GqlSpec', 'GqlError', 'GqlClient', 'GqlFrag
 
 # %% ../nbs/05_gql.ipynb #afa6b7a9
 from fastcore.utils import *
-from .transport import AsyncTransport
+from fasttransport.core import AsyncTransport
 
 import json, asyncio
 
@@ -132,7 +132,7 @@ class GqlClient:
         self.transport = AsyncTransport(timeout=timeout, base_headers=headers)
 
     async def _post(self, query, **vars):
-        return await self.transport.request('POST', self.url, json_data=dict(query=query, variables=vars or None))
+        return await self.transport.request('POST', self.url, json=dict(query=query, variables=vars or None))
 
     async def __call__(self, query, **vars):
         res = await self._post(query, **vars)

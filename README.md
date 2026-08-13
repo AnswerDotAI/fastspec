@@ -228,12 +228,12 @@ The same spec-to-client philosophy covers GraphQL: distill an endpoint’s intro
 
 ``` python
 from fastspec.gql import GqlSpec, GqlClient, INTROSPECT
-from fastspec.transport import AsyncTransport
+from fasttransport.core import AsyncTransport
 ```
 
 ``` python
 gh_hdrs = {"Authorization": f"bearer {os.environ['GITHUB_TOKEN']}"}
-raw = await AsyncTransport(base_headers=gh_hdrs).request('POST', 'https://api.github.com/graphql', json_data=dict(query=INTROSPECT))
+raw = await AsyncTransport(base_headers=gh_hdrs).request('POST', 'https://api.github.com/graphql', json=dict(query=INTROSPECT))
 gql = GqlClient(GqlSpec.from_introspection(raw), 'https://api.github.com/graphql', headers=gh_hdrs)
 await gql.batch(*[gql.repository(owner='AnswerDotAI', name=n).defaultBranchRef.target.oid
     for n in ('fastcore', 'fasthtml', 'ghapi')])
@@ -273,4 +273,4 @@ allow({OpFunc: ['__call__']})
 
 ## Going deeper
 
-Parsed specs serialize to a compact form ([`SpecParser.to_dict`](https://AnswerDotAI.github.io/fastspec/spec.html#specparser.to_dict)/`save`/`from_dict`), so a client package can ship a pre-parsed spec and skip the multi-megabyte original at runtime – this is how [ghapi](https://ghapi.fast.ai) stays small while covering GitHub’s full API, for both its REST and GraphQL surfaces ([`GqlSpec`](https://AnswerDotAI.github.io/fastspec/gql.html#gqlspec) gives GraphQL schemas the same treatment). Under the hood, requests flow through dedicated layers for [error handling](https://answerdotai.github.io/fastspec/errors.html), [SSE streaming](https://answerdotai.github.io/fastspec/sse.html), and [transport](https://answerdotai.github.io/fastspec/transport.html), each documented on its own page.
+Parsed specs serialize to a compact form ([`SpecParser.to_dict`](https://AnswerDotAI.github.io/fastspec/spec.html#specparser.to_dict)/`save`/`from_dict`), so a client package can ship a pre-parsed spec and skip the multi-megabyte original at runtime – this is how [ghapi](https://ghapi.fast.ai) stays small while covering GitHub’s full API, for both its REST and GraphQL surfaces ([`GqlSpec`](https://AnswerDotAI.github.io/fastspec/gql.html#gqlspec) gives GraphQL schemas the same treatment). Under the hood, requests flow through [fasttransport](https://github.com/AnswerDotAI/fasttransport)’s transports, and provider errors through the [error layer](https://answerdotai.github.io/fastspec/errors.html), each documented on its own page.
