@@ -232,7 +232,7 @@ def _op_docs_url(op):
     if desc and (durl := _first_url(desc)): return durl
 
 # %% ../nbs/03_spec.ipynb #f74f3391
-_py_types = {t.__name__:t for t in (str,int,float,bool,list,dict)}
+_py_types = {t.__name__:t for t in (str,int,float,bool,list,dict,bytes,type(None))}
 
 def _plain(v):
     "Normalize `v` to plain data: sets sorted, `L`/tuples to `list`, dicts recursed."
