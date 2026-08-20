@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.2
+
+### New Features
+
+- Add response to APIError, support `body_` kwarg override, and allow custom transport and `base_url` in OpenAPIClient ([#28](https://github.com/AnswerDotAI/fastspec/issues/28))
+
+
 ## 0.2.1
 
 ### New Features
