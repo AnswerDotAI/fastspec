@@ -101,7 +101,7 @@ class APIError(FastSpecError):
     "Structured API error with optional context."
     def __init__(self, message: str, *, provider: str = "", model: str = "", endpoint: str = "",
         status_code= None, error_type: str = "", code = None, request_id: str = "",
-        retryable = None, raw = None):
+        retryable = None, raw = None, response = None):
         self.message = message or "API request failed"
         self.provider = provider or ""
         self.model = model or ""
@@ -112,6 +112,7 @@ class APIError(FastSpecError):
         self.request_id = request_id or ""
         self.retryable = _retryable(status_code, self.error_type, self.code, self.message) if retryable is None else bool(retryable)
         self.raw = raw
+        self.response = response
         super().__init__(self.__str__())
 
     def with_context(self, *, provider: str = "", model: str = "", endpoint: str = "") -> "APIError":
@@ -127,6 +128,7 @@ class APIError(FastSpecError):
             request_id=self.request_id,
             retryable=self.retryable,
             raw=self.raw,
+            response=self.response,
         )
 
     def __str__(self):
@@ -154,6 +156,7 @@ def api_error(self:httpx2.HTTPStatusError, *, provider: str = "", model: str = "
         code=err.code,
         request_id=_req_id(resp.headers),
         raw=err.raw,
+        response=resp,
     )
 
 # %% ../nbs/00_errors.ipynb #859197d5

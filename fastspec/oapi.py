@@ -81,6 +81,7 @@ def _split(self:OpFunc, kwargs):
         elif k in self.query_params: query.setdefault(k, v)
 
     query.update(kwargs.pop("query_", {}))
+    body.update(kwargs.pop("body_", {}))
     if self.verb in ("GET", "DELETE", "HEAD", "OPTIONS") and not body: body = None
     return stream, headers, route, query, body, files
 
@@ -159,11 +160,23 @@ class SyncOpFunc(OpFunc):
 # %% ../nbs/04_oapi.ipynb #d4ff9dd9
 class OpenAPIClient:
     "Client built from OpenAPI operation metadata; async by default, blocking with `sync=True`."
-    def __init__(self, spec, *, headers=None, timeout=60.0, form_encoder=None, defaults=None, sync=False):
-        tcls,fcls = (SyncTransport,SyncOpFunc) if sync else (AsyncTransport,OpFunc)
-        self.transport = tcls(timeout=timeout, base_headers=headers)
+    def __init__(self,
+        spec, # A parsed `SpecParser`
+        *,
+        headers=None, # Base headers for a built transport, e.g. auth
+        timeout=60.0, # Timeout for a built transport, in seconds
+        form_encoder=None, # Encoder for form-content bodies
+        defaults=None, # Param values auto-filled on every call, e.g. `dict(owner='fastai')`
+        sync=False, # Build a blocking client? (ignored when `transport` is given: its type decides)
+        transport=None, # A `fasttransport` to reuse instead of building one
+        base_url=None, # Overrides the spec's base URL, e.g. for a local service instance
+    ):
+        if transport is None: transport = (SyncTransport if sync else AsyncTransport)(timeout=timeout, base_headers=headers)
+        fcls = SyncOpFunc if isinstance(transport, SyncTransport) else OpFunc
+        self.transport = transport
         enc = ifnone(form_encoder, noop)
-        self.ops = [fcls(o, self.transport, spec.base_url, enc, defaults) for o in spec.ops]
+        base_url = ifnone(base_url, spec.base_url)
+        self.ops = [fcls(o, self.transport, base_url, enc, defaults) for o in spec.ops]
         self.func_dict = {f"{o.path}:{o.verb.upper()}": o for o in self.ops}
         self.groups = mk_groups(self.ops)
         for k,v in self.groups.items(): setattr(self, k, v)
