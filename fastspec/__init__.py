@@ -4,4 +4,4 @@ Modules:
 
 - `fastspec.gql`: GraphQL client: distill a schema once, then build schema-checked queries by attribute chaining, batched into single requests"""
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
