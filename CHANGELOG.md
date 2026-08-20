@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.3
+
+### New Features
+
+- Support bytes and NoneType in param type serialization round-trip ([#29](https://github.com/AnswerDotAI/fastspec/issues/29))
+
+
 ## 0.2.2
 
 ### New Features
