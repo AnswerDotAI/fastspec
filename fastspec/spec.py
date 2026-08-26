@@ -32,12 +32,13 @@ class OpSpec:
     param_types: Dict = field(default_factory=dict)
     param_defaults: Dict = field(default_factory=dict)
     param_docs: Dict = field(default_factory=dict)
+    body_examples: Dict = field(default_factory=dict)
     docs_url: str = ""
     
     def mk_doc(self):
         rows = []
         for f,v in vars(self).items():
-            if f not in ('param_types','param_defaults','param_docs'): rows.append(f'| `{f}` | {v} |')
+            if f not in ('param_types','param_defaults','param_docs','body_examples'): rows.append(f'| `{f}` | {v} |')
         md = f'| Field | Value |\n|---|---|\n' + '\n'.join(rows)
         all_params = self.route_params + self.query_params + self.body_params
         if all_params:
@@ -197,10 +198,13 @@ def _body_params(op, spec):
     rb = _resolve_obj(op.get("requestBody", {}), spec)
     content = rb.get("content", {})
     ct = first((ct for ct in ctypes if ct in content), None)
-    schema = content.get(ct, {}).get("schema") if ct else None
+    mt = content.get(ct) or {}
+    schema = mt.get("schema")
+    exs = mt.get("examples") or ({"default": {"value": mt["example"]}} if "example" in mt else {})
+    bexs = {k: {"summary": r.get("summary",""), "value": r["value"]} for k,v in exs.items() if "value" in (r := _resolve_obj(v, spec))}
     if not schema:
         return AttrDict(body_params=[], file_params=[], required_params=set(), param_types={},
-            param_docs={}, param_defaults={}, request_content_type=ct)
+            param_docs={}, param_defaults={}, request_content_type=ct, body_examples=bexs)
     props, req = _schema_props_required(schema, spec)
     fparams = [k for k,v in props.items() if _resolve_obj(v, spec).get("format") == "binary"]
     bparams = [k for k in props if k not in fparams]
@@ -210,7 +214,7 @@ def _body_params(op, spec):
     # Params without a default or nullable type are required
     # req |= {k for k in props if k not in defaults} # too aggressive doesn't match when spec is incomplete
     return AttrDict(body_params=bparams, file_params=fparams, required_params=req, param_types=ptypes,
-        param_docs=pdocs, param_defaults=defaults, request_content_type=ct)
+        param_docs=pdocs, param_defaults=defaults, request_content_type=ct, body_examples=bexs)
 
 # %% ../nbs/03_spec.ipynb #9ab326f7
 _pat_md_url = re.compile(r"\[[^\]]+\]\((https?://[^)\s]+)\)")
@@ -268,7 +272,7 @@ def openapi_to_ops(spec, group_func=None):
                 required_params=sorted(pdict.required_params | bpdict.required_params),
                 param_types={k:v for k,v in merge(pdict.param_types, bpdict.param_types).items() if v},
                 param_defaults=_plain(merge(pdict.param_defaults, bpdict.param_defaults)), param_docs=merge(pdict.param_docs, bpdict.param_docs),
-                docs_url=_op_docs_url(op) or ""))
+                docs_url=_op_docs_url(op) or "", body_examples=_plain(bpdict.body_examples)))
     return res
 
 # %% ../nbs/03_spec.ipynb #78ea6617
