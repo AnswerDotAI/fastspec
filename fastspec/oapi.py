@@ -8,7 +8,7 @@ Docs: https://AnswerDotAI.github.io/fastspec/oapi.html.md"""
 __all__ = ['OpFunc', 'SyncOpFunc', 'OpenAPIClient']
 
 # %% ../nbs/04_oapi.ipynb #632a2010
-import httpx2,json
+import httpx2,json,mimetypes
 from urllib.parse import urljoin, quote
 from fastcore.utils import *
 from fastcore.meta import delegates
@@ -42,6 +42,7 @@ class OpFunc:
         self.file_params   = op_spec.file_params
         self.summary       = op_spec.summary or f"{op_spec.verb} {op_spec.path}"
         self.docs_url      = op_spec.docs_url
+        self.media_url     = op_spec.media_url
         self.required_params = op_spec.required_params
         self.param_docs    = op_spec.param_docs
         self.__signature__ = mk_sig(op_spec, self.sparams, self.defaults)
@@ -133,6 +134,40 @@ async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, rout
         async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json=body, **kwargs): yield dict2obj(ev)
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
+# %% ../nbs/04_oapi.ipynb #b91338b1
+async def _chunks(f, close=False, sz=1<<20):
+    try:
+        while (b := f.read(sz)): yield b
+    finally:
+        if close: f.close()
+
+def _media(media, media_type=None):
+    "Content, content type, and size (None if unknown) for `media`: bytes, a path, or a file-like"
+    if isinstance(media, bytes): return media, media_type or 'application/octet-stream', len(media)
+    if isinstance(media, (str, Path)):
+        p = Path(media)
+        return _chunks(p.open('rb'), close=True), media_type or mimetypes.guess_type(p.name)[0] or 'application/octet-stream', p.stat().st_size
+    size = None
+    if getattr(media, 'seekable', lambda: False)():
+        pos = media.tell()
+        size = media.seek(0, 2) - pos
+        media.seek(pos)
+    return _chunks(media), media_type or mimetypes.guess_type(str(getattr(media, 'name', '')))[0] or 'application/octet-stream', size
+
+@patch
+async def _upload(self:OpFunc, media, media_type, *, headers, query, route, body):
+    "Resumable upload: POST the metadata for a session URI, then PUT the content to it"
+    if media is None: raise TypeError(f"{self.name}: `media` is required")
+    data, ctype, size = _media(media, media_type)
+    hdrs = {**headers, 'X-Upload-Content-Type': ctype}
+    put_hdrs = {'Content-Type': ctype}
+    if size is not None: hdrs['X-Upload-Content-Length'] = put_hdrs['Content-Length'] = str(size)
+    url = _path(self.media_url, route_params=route)
+    try:
+        r = await self.client.request('POST', url, headers=hdrs, params={**query, 'uploadType': 'resumable'}, json=body, raw=True)
+        return dict2obj(await self.client.request('PUT', r.headers['location'], headers=put_hdrs, content=data))
+    except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
+
 # %% ../nbs/04_oapi.ipynb #0296d943
 @patch
 def _prep(self:OpFunc, args, kwargs):
@@ -149,6 +184,7 @@ def _prep(self:OpFunc, args, kwargs):
 @patch
 async def __call__(self:OpFunc, *args, **kwargs):
     stream, url, headers, query, route, kw = self._prep(args, kwargs)
+    if self.media_url: return await self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=kw['body'])
     if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
     return await self._request(url, headers=headers, query=query, route=route, **kw)
 
@@ -156,6 +192,7 @@ async def __call__(self:OpFunc, *args, **kwargs):
 class SyncOpFunc(OpFunc):
     "`OpFunc` over a `SyncTransport`: calls return results directly, with no `await`."
     def __call__(self, *args, **kwargs):
+        if self.media_url: raise TypeError("uploads need an async client")
         stream, url, headers, query, route, kw = self._prep(args, kwargs)
         if stream: raise TypeError("stream=True needs an async client; or wrap the async client with `fastcore.aio.iter_sync`")
         body = kw.pop('body')
