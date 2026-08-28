@@ -20,6 +20,11 @@ from fasttransport.core import AsyncTransport,SyncTransport
 
 
 # %% ../nbs/04_oapi.ipynb #6b2f1057
+def _examples_doc(exs):
+    "Render body examples as an `Examples:` doc section, one fenced JSON block per example"
+    if not exs: return ''
+    return '\n\nExamples:' + ''.join(f"\n- {v.get('summary') or k}:\n```json\n{json.dumps(v['value'], indent=2)}\n```" for k,v in exs.items())
+
 class OpFunc:
     def __init__(self, op_spec, client, base_url, form_encoder=None, defaults=None):
         store_attr()
@@ -40,7 +45,7 @@ class OpFunc:
         self.required_params = op_spec.required_params
         self.param_docs    = op_spec.param_docs
         self.__signature__ = mk_sig(op_spec, self.sparams, self.defaults)
-        self.__doc__       = mk_doc(self, self.__signature__, self.sparams)
+        self.__doc__       = mk_doc(self, self.__signature__, self.sparams) + _examples_doc(op_spec.body_examples)
 
     def _repr_markdown_(self): return self.__doc__
     def __repr__(self): return f"{'.'.join(snake(g) for g in listify(self.group))}.{self.name}{self.__signature__}\n{self.docs_url}"
