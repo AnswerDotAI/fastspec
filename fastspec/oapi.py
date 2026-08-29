@@ -40,13 +40,6 @@ class OpFunc:
     def _repr_markdown_(self): return self.__doc__
     def __repr__(self): return f"{'.'.join(snake(g) for g in listify(self.group))}.{self.name}{self.__signature__}\n{self.docs_url}"
 
-# %% ../nbs/04_oapi.ipynb #75d6cd54
-def op_func(spec, name, group=None):
-    "A detached `OpFunc` for spec op `name`: a signature and docs donor, e.g. a `delegates` target for wrappers"
-    o = first(o for o in spec.ops if o.name == name and (group is None or o.group == group))
-    if o is None: raise ValueError(f'no op named {name!r}' + (f' in group {group!r}' if group else ''))
-    return OpFunc(o, None, '')
-
 # %% ../nbs/04_oapi.ipynb #6e381df4
 @patch
 def _bind(self:OpFunc, args, kwargs):
@@ -147,6 +140,13 @@ async def __call__(self:OpFunc, *args, **kwargs):
     stream, url, headers, query, route, kw = self._prep(args, kwargs)
     if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
     return await self._request(url, headers=headers, query=query, route=route, **kw)
+
+# %% ../nbs/04_oapi.ipynb #75d6cd54
+def op_func(spec, name, group=None):
+    "A detached `OpFunc` for spec op `name`: a signature and docs donor, e.g. a `delegates` target for wrappers"
+    o = first(o for o in spec.ops if o.name == name and (group is None or o.group == group))
+    if o is None: raise ValueError(f'no op named {name!r}' + (f' in group {group!r}' if group else ''))
+    return OpFunc(o, None, '')
 
 # %% ../nbs/04_oapi.ipynb #b23f43ae
 class SyncOpFunc(OpFunc):
