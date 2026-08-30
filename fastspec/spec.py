@@ -310,11 +310,10 @@ _media_docs = dict(media='Content to upload: bytes, a path, or a file-like', med
 
 def _media_twin(op, m, root):
     "The upload op for a Discovery method with a resumable `mediaUpload` protocol, or None"
-    proto = m.get('mediaUpload', {}).get('protocols', {}).get('resumable')
+    proto = nested_idx(m, *'mediaUpload protocols resumable'.split())
     if not proto: return
-    return replace(op, name='upload' if op.name=='create' else f'{op.name}_media', media_url=root.rstrip('/') + proto['path'],
-        summary=f'{op.summary} Uploads `media` as its content.'.strip(), required_params=sorted([*op.required_params, 'media']),
-        param_docs={**op.param_docs, **_media_docs})
+    return replace(op, name='upload' if op.name=='create' else f'{op.name}_media', media_url=root.rstrip('/')+proto['path'],
+        required_params=op.required_params+['media'], param_docs=merge(op.param_docs, _media_docs))
 
 def discovery_to_ops(spec):
     "Convert Google Discovery spec to OpSpec list."

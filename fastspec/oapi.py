@@ -32,7 +32,7 @@ class OpFunc:
         self.defaults      = defaults or {}
         self.sparams       = sanitized_params(op_spec.params)
         for o in ('name group path verb route_params query_params body_params request_content_type '
-                  'file_params docs_url media_url required_params param_docs').split(): setattr(self, o, getattr(op_spec, o))
+            'file_params docs_url media_url required_params param_docs').split(): setattr(self, o, getattr(op_spec, o))
         self.__name__ = self.name
         self.summary  = op_spec.summary or f"{op_spec.verb} {op_spec.path}"
         self.__signature__ = mk_sig(op_spec, self.sparams, self.defaults)
