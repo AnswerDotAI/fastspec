@@ -10,10 +10,9 @@ __all__ = ['OpFunc', 'op_func', 'SyncOpFunc', 'OpenAPIClient']
 # %% ../nbs/04_oapi.ipynb #632a2010
 import httpx2,json,mimetypes
 from urllib.parse import urljoin, quote
-from inspect import isawaitable
 from fastcore.utils import *
 from fastcore.meta import delegates
-from fastcore.aio import then, to_aiter
+from fastcore.aio import then
 from fastcore.apisurface import snake, sanitized_params, mk_sig, mk_doc, OpGroup, mk_groups, full_docs as _full_docs
 
 from .errors import APIError
@@ -125,49 +124,16 @@ async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, rout
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 # %% ../nbs/04_oapi.ipynb #b91338b1
-def _chunks(f, close=False, sz=1<<20):
-    try:
-        while (b := f.read(sz)): yield b
-    finally:
-        if close: f.close()
-
-def _media(media, media_type=None):
-    "Content, content type, and size (None if unknown) for `media`: bytes, a path, or a file-like"
-    if isinstance(media, bytes): return media, media_type or 'application/octet-stream', len(media)
-    if isinstance(media, (str, Path)):
-        p = Path(media)
-        return _chunks(p.open('rb'), close=True), media_type or mimetypes.guess_type(p.name)[0] or 'application/octet-stream', p.stat().st_size
-    size = None
-    if getattr(media, 'seekable', lambda: False)():
-        pos = media.tell()
-        size = media.seek(0, 2) - pos
-        media.seek(pos)
-    return _chunks(media), media_type or mimetypes.guess_type(str(getattr(media, 'name', '')))[0] or 'application/octet-stream', size
-
-@patch
-def _ctx(self:OpFunc, f, **ctx):
-    "Run `f()`, raising `APIError` with `ctx` on failure; wraps the coroutine when the result is awaitable"
-    try: res = f()
-    except Exception as e: self._raise_with_context(e, **ctx)
-    if not isawaitable(res): return res
-    async def _go():
-        try: return await res
-        except Exception as e: self._raise_with_context(e, **ctx)
-    return _go()
-
 @patch
 def _upload(self:OpFunc, media, media_type, *, headers, query, route, body):
-    "Resumable upload: POST the metadata for a session URI, then PUT the content to it; a value on a sync client, awaitable on an async one"
+    "Resumable upload: POST the metadata for a session URI, then PUT the content to it"
     if media is None: raise TypeError(f"{self.name}: `media` is required")
-    data, ctype, size = _media(media, media_type)
-    if not isinstance(data, bytes) and not isinstance(self.client, SyncTransport): data = to_aiter(data)
-    hdrs = {**headers, 'X-Upload-Content-Type': ctype}
-    put_hdrs = {'Content-Type': ctype}
-    if size is not None: hdrs['X-Upload-Content-Length'] = put_hdrs['Content-Length'] = str(size)
+    if isinstance(media, (str, Path)): media_type,media = media_type or mimetypes.guess_type(media)[0], Path(media).read_bytes()
+    elif hasattr(media, 'read'): media = media.read()
+    ctype = media_type or 'application/octet-stream'
     url = _path(self.media_url, route_params=route)
-    return self._ctx(lambda: then(self.client.request('POST', url, headers=hdrs, params={**query, 'uploadType': 'resumable'}, json=body, raw=True),
-        ~Self.headers['location'], partial(self.client.request, 'PUT', headers=put_hdrs, content=data), dict2obj),
-        endpoint='', route=route, query=query, body=body)
+    return then(self.client.request('POST', url, headers={**headers, 'X-Upload-Content-Type': ctype}, params={**query, 'uploadType': 'resumable'}, json=body, raw=True),
+        ~Self.headers['location'], partial(self.client.request, 'PUT', headers={'Content-Type': ctype}, content=media), dict2obj)
 
 # %% ../nbs/04_oapi.ipynb #0296d943
 @patch
@@ -185,9 +151,10 @@ def _prep(self:OpFunc, args, kwargs):
 @patch
 async def __call__(self:OpFunc, *args, **kwargs):
     stream, url, headers, query, route, kw = self._prep(args, kwargs)
-    if self.media_url: return await self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=kw['body'])
     if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
-    return await self._request(url, headers=headers, query=query, route=route, **kw)
+    if not self.media_url: return await self._request(url, headers=headers, query=query, route=route, **kw)
+    try: return await self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=kw['body'])
+    except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=kw['body'])
 
 # %% ../nbs/04_oapi.ipynb #75d6cd54
 def op_func(spec, name, group=None):
@@ -201,10 +168,11 @@ class SyncOpFunc(OpFunc):
     "`OpFunc` over a `SyncTransport`: calls return results directly, with no `await`."
     def __call__(self, *args, **kwargs):
         stream, url, headers, query, route, kw = self._prep(args, kwargs)
-        if self.media_url: return self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=kw['body'])
         if stream: raise TypeError("stream=True needs an async client; or wrap the async client with `fastcore.aio.iter_sync`")
         body = kw.pop('body')
-        try: return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json=body, **kw))
+        try:
+            if self.media_url: return self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=body)
+            return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json=body, **kw))
         except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 # %% ../nbs/04_oapi.ipynb #d4ff9dd9
