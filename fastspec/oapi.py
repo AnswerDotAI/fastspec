@@ -126,7 +126,7 @@ async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, rout
 # %% ../nbs/04_oapi.ipynb #b91338b1
 @patch
 def _upload(self:OpFunc, media, media_type, *, headers, query, route, body):
-    "Resumable upload: POST the metadata for a session URI, then PUT the content to it"
+    "Upload `media` through Google's resumable protocol"
     if media is None: raise TypeError(f"{self.name}: `media` is required")
     if isinstance(media, (str, Path)): media_type,media = media_type or mimetypes.guess_type(media)[0], Path(media).read_bytes()
     elif hasattr(media, 'read'): media = media.read()

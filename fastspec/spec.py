@@ -34,7 +34,7 @@ class OpSpec:
     param_docs: Dict = field(default_factory=dict)
     body_examples: Dict = field(default_factory=dict)
     docs_url: str = ""
-    media_url: str = "" # Resumable upload endpoint (Discovery `mediaUpload`); set only on the upload twin of a method that accepts content
+    media_url: str = "" # Resumable upload endpoint; set only on an upload twin
     
     def mk_doc(self):
         rows = []
