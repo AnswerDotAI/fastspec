@@ -2,6 +2,15 @@
 
 <!-- do not remove -->
 
+## 0.2.4
+
+### New Features
+
+- Move errors to fasttransport, and remove FastSpecError and SpecError ([#36](https://github.com/AnswerDotAI/fastspec/pull/36)), thanks to [@jph00](https://github.com/jph00)
+- Add op_func to create detached OpFunc as a delegates target so wrappers inherit spec op signatures and docs ([#35](https://github.com/AnswerDotAI/fastspec/issues/35))
+- Show request body examples in docs ([#30](https://github.com/AnswerDotAI/fastspec/pull/30)), thanks to [@kafkasl](https://github.com/kafkasl)
+
+
 ## 0.2.3
 
 ### New Features
