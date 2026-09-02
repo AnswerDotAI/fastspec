@@ -15,7 +15,7 @@ from fastcore.meta import delegates
 from fastcore.aio import then
 from fastcore.apisurface import snake, sanitized_params, mk_sig, mk_doc, OpGroup, mk_groups, full_docs as _full_docs
 
-from .errors import APIError
+from fasttransport.errors import APIError
 from .spec import OpSpec, SpecParser
 from fasttransport.core import AsyncTransport,SyncTransport
 
