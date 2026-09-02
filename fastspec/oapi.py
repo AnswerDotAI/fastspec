@@ -128,9 +128,10 @@ async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, rout
 def _upload(self:OpFunc, media, media_type, *, headers, query, route, body):
     "Upload `media` through Google's resumable protocol"
     if media is None: raise TypeError(f"{self.name}: `media` is required")
-    if isinstance(media, (str, Path)): media_type,media = media_type or mimetypes.guess_type(media)[0], Path(media).read_bytes()
-    elif hasattr(media, 'read'): media = media.read()
-    ctype = media_type or 'application/octet-stream'
+    if isinstance(media, (str, Path)): fname,media = media, Path(media).read_bytes()
+    else: fname = body.get('name')
+    if hasattr(media, 'read'): media = media.read()
+    ctype = media_type or mimetypes.guess_type(fname or '')[0] or 'application/octet-stream'
     url = _path(self.media_url, route_params=route)
     return then(self.client.request('POST', url, headers={**headers, 'X-Upload-Content-Type': ctype}, params={**query, 'uploadType': 'resumable'}, json=body, raw=True),
         ~Self.headers['location'], partial(self.client.request, 'PUT', headers={'Content-Type': ctype}, content=media), dict2obj)
