@@ -11,7 +11,7 @@ __all__ = ['ctypes', 'OpSpec', 'openapi_to_ops', 'discovery_to_ops', 'SpecParser
 from fastcore.utils import *
 from fastcore.apisurface import snake, sanitize_param_name
 import pprint
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, replace
 
 
 # %% ../nbs/03_spec.ipynb #d448f3e9
@@ -34,6 +34,7 @@ class OpSpec:
     param_docs: Dict = field(default_factory=dict)
     body_examples: Dict = field(default_factory=dict)
     docs_url: str = ""
+    media_url: str = "" # Resumable upload endpoint; set only on an upload twin
     
     def mk_doc(self):
         rows = []
@@ -53,7 +54,7 @@ class OpSpec:
         return md
 
     @property
-    def params(self): return self.route_params + self.query_params + self.body_params + self.file_params
+    def params(self): return self.route_params + self.query_params + self.body_params + self.file_params + (['media', 'media_type'] if self.media_url else [])
 
     def __post_init__(self): object.__setattr__(self, '__doc__', self.mk_doc())
     def _repr_markdown_(self): return self.__doc__
@@ -305,6 +306,15 @@ def _discovery_body_params(m, schemas, spec):
     return AttrDict(body_params=list(props), required_params=req, param_types=ptypes, param_docs=pdocs, param_defaults=defaults)
 
 # %% ../nbs/03_spec.ipynb #54e889f2
+_media_docs = dict(media='Content to upload: bytes, a path, or a file-like', media_type='Content type of `media` (guessed from a path, else `application/octet-stream`)')
+
+def _media_twin(op, m, root):
+    "The upload op for a Discovery method with a resumable `mediaUpload` protocol, or None"
+    proto = nested_idx(m, *'mediaUpload protocols resumable'.split())
+    if not proto: return
+    return replace(op, name='upload' if op.name=='create' else f'{op.name}_media', media_url=root.rstrip('/')+proto['path'],
+        required_params=op.required_params+['media'], param_docs=merge(op.param_docs, _media_docs))
+
 def discovery_to_ops(spec):
     "Convert Google Discovery spec to OpSpec list."
     schemas = spec.get("schemas", {})
@@ -316,12 +326,14 @@ def discovery_to_ops(spec):
             path = m.get("path")
             pdict = _discovery_collect_params(m, spec)
             bpdict = _discovery_body_params(m, schemas, spec)
-            ops.append(OpSpec(group=group, name=snake(mname), path=path, verb=verb, summary=_clean_desc(m.get("description", "")),
+            op = OpSpec(group=group, name=snake(mname), path=path, verb=verb, summary=_clean_desc(m.get("description", "")),
                 route_params=pdict.route_params or _path_params(path), query_params=pdict.query_params, body_params=bpdict.body_params,
                 required_params=sorted(pdict.required_params | bpdict.required_params),
                 param_types={k:v for k,v in merge(pdict.param_types, bpdict.param_types).items() if v},
                 param_defaults=_plain(merge(pdict.param_defaults, bpdict.param_defaults)), param_docs=merge(pdict.param_docs, bpdict.param_docs),
-                docs_url=str(m.get("documentationLink", ""))))
+                docs_url=str(m.get("documentationLink", "")))
+            ops.append(op)
+            if twin := _media_twin(op, m, spec.get('rootUrl', '')): ops.append(twin)
         for rname, child in res.get("resources", {}).items(): walk(child, group + [rname])
     for rname, res in spec.get("resources", {}).items(): walk(res, [rname])
     return ops

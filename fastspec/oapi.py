@@ -8,10 +8,11 @@ Docs: https://AnswerDotAI.github.io/fastspec/oapi.html.md"""
 __all__ = ['OpFunc', 'op_func', 'SyncOpFunc', 'OpenAPIClient']
 
 # %% ../nbs/04_oapi.ipynb #632a2010
-import httpx2,json
+import httpx2,json,mimetypes
 from urllib.parse import urljoin, quote
 from fastcore.utils import *
 from fastcore.meta import delegates
+from fastcore.aio import then
 from fastcore.apisurface import snake, sanitized_params, mk_sig, mk_doc, OpGroup, mk_groups, full_docs as _full_docs
 
 from fasttransport.errors import APIError
@@ -31,7 +32,7 @@ class OpFunc:
         self.defaults      = defaults or {}
         self.sparams       = sanitized_params(op_spec.params)
         for o in ('name group path verb route_params query_params body_params request_content_type '
-                  'file_params docs_url required_params param_docs').split(): setattr(self, o, getattr(op_spec, o))
+            'file_params docs_url media_url required_params param_docs').split(): setattr(self, o, getattr(op_spec, o))
         self.__name__ = self.name
         self.summary  = op_spec.summary or f"{op_spec.verb} {op_spec.path}"
         self.__signature__ = mk_sig(op_spec, self.sparams, self.defaults)
@@ -122,6 +123,18 @@ async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, rout
         async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json=body, **kwargs): yield dict2obj(ev)
     except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
+# %% ../nbs/04_oapi.ipynb #b91338b1
+@patch
+def _upload(self:OpFunc, media, media_type, *, headers, query, route, body):
+    "Upload `media` through Google's resumable protocol"
+    if media is None: raise TypeError(f"{self.name}: `media` is required")
+    if isinstance(media, (str, Path)): media_type,media = media_type or mimetypes.guess_type(media)[0], Path(media).read_bytes()
+    elif hasattr(media, 'read'): media = media.read()
+    ctype = media_type or 'application/octet-stream'
+    url = _path(self.media_url, route_params=route)
+    return then(self.client.request('POST', url, headers={**headers, 'X-Upload-Content-Type': ctype}, params={**query, 'uploadType': 'resumable'}, json=body, raw=True),
+        ~Self.headers['location'], partial(self.client.request, 'PUT', headers={'Content-Type': ctype}, content=media), dict2obj)
+
 # %% ../nbs/04_oapi.ipynb #0296d943
 @patch
 def _prep(self:OpFunc, args, kwargs):
@@ -139,7 +152,9 @@ def _prep(self:OpFunc, args, kwargs):
 async def __call__(self:OpFunc, *args, **kwargs):
     stream, url, headers, query, route, kw = self._prep(args, kwargs)
     if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
-    return await self._request(url, headers=headers, query=query, route=route, **kw)
+    if not self.media_url: return await self._request(url, headers=headers, query=query, route=route, **kw)
+    try: return await self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=kw['body'])
+    except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=kw['body'])
 
 # %% ../nbs/04_oapi.ipynb #75d6cd54
 def op_func(spec, name, group=None):
@@ -155,7 +170,9 @@ class SyncOpFunc(OpFunc):
         stream, url, headers, query, route, kw = self._prep(args, kwargs)
         if stream: raise TypeError("stream=True needs an async client; or wrap the async client with `fastcore.aio.iter_sync`")
         body = kw.pop('body')
-        try: return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json=body, **kw))
+        try:
+            if self.media_url: return self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=body)
+            return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json=body, **kw))
         except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
 
 # %% ../nbs/04_oapi.ipynb #d4ff9dd9
