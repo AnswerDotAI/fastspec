@@ -306,7 +306,7 @@ def _discovery_body_params(m, schemas, spec):
     return AttrDict(body_params=list(props), required_params=req, param_types=ptypes, param_docs=pdocs, param_defaults=defaults)
 
 # %% ../nbs/03_spec.ipynb #54e889f2
-_media_docs = dict(media='Content to upload: bytes, a path, or a file-like', media_type='Content type of `media` (guessed from a path, else `application/octet-stream`)')
+_media_docs = dict(media='Content to upload: bytes, a path, or a file-like', media_type='Content type of `media` (guessed from a path or a `name` in the body, else `application/octet-stream`)')
 
 def _media_twin(op, m, root):
     "The upload op for a Discovery method with a resumable `mediaUpload` protocol, or None"
