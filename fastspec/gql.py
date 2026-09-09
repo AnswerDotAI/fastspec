@@ -1,14 +1,30 @@
-"""GraphQL client: distill a schema once, then build schema-checked queries by attribute chaining, batched into single requests
+"""Build GraphQL queries by field-checked attribute chaining, reuse distilled schemas, and combine queries into batched requests
 
-A GraphQL API is one endpoint that accepts a *shape*: describe the nesting you want and the server returns exactly that, in one round trip. The price is that you must know the schema to write the shape. This module closes that gap for any GraphQL endpoint: `GqlSpec` distills the standard introspection answer into compact tables a client package can ship, and `GqlClient` uses them to expose the schema for discovery (`xdir`, attribute completion, rich reprs), build queries by attribute chaining with plain-kwargs arguments, and execute many independent queries as batched requests. Raw GraphQL text works at every level, and only query fields are exposed as attributes -- mutations require deliberately writing raw text. Everything except execution is offline: distilling, discovery, and query building need no network.
+A GraphQL query names the fields you want and how they nest. The server returns those fields from one endpoint. You need the schema to know which fields and arguments you can request.
 
-`GqlClient` executes queries, riding the same `AsyncTransport` as `OpenAPIClient` -- one place for timeouts, header merging, and HTTP errors enriched with the response body. Calling it with raw GraphQL text (plus optional variables) is the whole API in one line; the fragment layer below builds that text for you. GraphQL reports failures as an `errors` list that can arrive *alongside* partial data on a successful HTTP exchange, so failures raise `GqlError`, which keeps the structured list (`.errors`) and any partial payload (`.data`).
+`GqlSpec` converts an introspection response into compact schema tables. Client packages can ship those tables instead of fetching a schema at startup. `GqlClient` uses them for field discovery, attribute completion, and query construction. Use `xdir` or rich displays to explore the schema. Chain attributes to select fields and pass keyword arguments to bind their arguments. `batch` combines independent queries into requests.
 
-Queries are built as *fragments*: attribute access on the client starts a path at a query field, each further attribute extends it a field at a time, and calling a fragment binds arguments as plain kwargs. The seam rule: **args are kwargs; selection is attribute chaining when linear, raw GraphQL text when not.** Argument values render as GraphQL literals -- strings quoted, enums (recognized from the schema, including inside input objects) bare:
+You can also submit raw GraphQL, either as a complete query or as a selection within a field. Attributes expose query fields, not mutations. To perform a mutation, write the GraphQL explicitly.
 
-Because a query is a shape, "run these N fragments" is just one bigger shape: `batch` aliases each fragment into a single request and returns results in input order, with `None` for any alias that errored rather than killing the other answers. Pass fragments individually, or as one iterable; `chunk=` (default `batch_chunk` on the client) splits large batches into parallel requests, for servers that resolve aliases serially:
+Once you have the introspection response, distillation, discovery, and query construction work offline. Fetching the schema and executing queries require a connection. Attribute checks catch unknown fields; the server still validates arguments and raw selections.
 
-Long lists page rather than batch: Relay-convention APIs (GitHub among them) expose them as *connection* fields walked with `first`/`after` cursors, each response minting the next cursor. `paged` follows the cursors to the end, yielding nodes as they arrive -- serial by protocol design, where `batch` fans out in parallel:
+Call `GqlClient` with a GraphQL string and optional variable values. It returns the response's `data` as an object with attribute access. It uses `AsyncTransport`, like `OpenAPIClient`, for timeouts, header merging, and HTTP errors that include the response body.
+
+GraphQL can report errors even when the HTTP request succeeds. Direct calls raise `GqlError` for any nonempty `errors` list. The exception retains that list in `.errors` and any partial payload in `.data`. Batch calls handle partial failures differently, as shown below.
+
+A `GqlFrag` describes a path through query fields. Start with an attribute on the client. Add attributes to select nested fields. Call a fragment with keyword arguments to set arguments on its last field.
+
+Argument formatting uses the schema. Ordinary strings get quotes. Enum values don't, including enums nested inside input objects. Python booleans, `None`, lists, and dicts become GraphQL literals. Unsupported Python values raise `TypeError`.
+
+Use a raw selection string when you need multiple fields rather than one path. Keyword arguments specify field arguments; a positional string specifies the selection.
+
+`batch` accepts fragments as separate arguments or as one iterable. It gives each fragment an alias and combines them into a query. The results retain input order. A null alias result becomes `None`; other results remain available. An error without a field path, or a response without data, raises `GqlError`.
+
+By default, all fragments go in one request. Set `chunk` to limit the number per request. The client sends those requests concurrently. If you omit `chunk`, it uses the client's `batch_chunk` setting, initially `None`. Chunking helps when a server resolves fields sequentially.
+
+Use `paged` for a long connection rather than a set of independent queries. It requests `nodes` and `pageInfo`, using `first` for the page size and `after` for the cursor. Each response supplies `endCursor` and `hasNextPage`.
+
+`paged` yields each node and follows cursors until no pages remain. Its default page size is 100. It fetches pages sequentially because the next request needs the previous response's cursor. This helper requires a connection with `nodes`; it doesn't support an `edges`-only connection.
 
 Docs: https://AnswerDotAI.github.io/fastspec/gql.html.md"""
 
@@ -121,13 +137,13 @@ class _TypeIdx:
 
 # %% ../nbs/05_gql.ipynb #39ef587d
 class GqlError(Exception):
-    "A GraphQL `errors` response; `errors` is the structured list, `data` any partial payload"
+    "GraphQL failures with their structured `errors` list and any partial `data`."
     def __init__(self, errors, data=None):
         self.errors, self.data = errors, data
         super().__init__('; '.join(e.get('message', str(e)) for e in errors))
 
 class GqlClient:
-    "GraphQL client over a `GqlSpec`: query fields as attributes, `batch` for one-request fan-out"
+    "Build queries from a `GqlSpec` and execute raw queries, fragments, or batches."
     def __init__(self, spec, url, *, headers=None, timeout=60.0):
         self.spec, self.url = spec, url
         self.transport = AsyncTransport(timeout=timeout, base_headers=headers)
@@ -173,9 +189,9 @@ def _fmt_args(args, argspec, types):
 
 # %% ../nbs/05_gql.ipynb #c37d4669
 class GqlFrag:
-    """A GraphQL query path: attribute access extends it, calling binds args, awaiting executes.
+    """Build a GraphQL query by selecting fields and binding arguments.
 
-    Call with keyword arguments to bind field arguments, or with a selection string for branching selections. A raw selection ends chaining. Use `xdir(fragment)` for available fields and `client.t.TypeName` for schema types. Await only a leaf or a fragment with a selection.
+    Add attributes to select nested fields. Call with keyword arguments to bind field arguments. Pass a selection string for branching selections. A raw selection ends attribute chaining. Use `xdir(fragment)` to list fields and `client.t.TypeName` to inspect schema types. Await a scalar or enum field, or a fragment with a selection, to execute it.
     """
     def __init__(self, client, steps): self._c, self._steps = client, steps
 
@@ -267,7 +283,7 @@ async def _batch1(self:GqlClient, frags):
 
 @patch
 async def batch(self:GqlClient, *frags, chunk=None):
-    "Execute fragments (or one iterable of them) as aliased requests, `chunk` per request in parallel; results in input order, `None` where an alias errored"
+    "Execute fragments in concurrent aliased batches and return results in input order."
     if len(frags) == 1 and not isinstance(frags[0], GqlFrag): frags = tuple(frags[0])
     chunk = ifnone(chunk, self.batch_chunk) or max(len(frags), 1)
     res = await asyncio.gather(*[self._batch1(frags[i:i+chunk]) for i in range(0, len(frags), chunk)])

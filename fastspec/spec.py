@@ -340,7 +340,7 @@ def discovery_to_ops(spec):
 
 # %% ../nbs/03_spec.ipynb #6044e333
 class SpecParser:
-    "Parse OpenAPI or Discovery specs into a unified `base_url` + `ops` representation."
+    "Parse OpenAPI or Discovery specifications into a base URL and operation records."
     def __init__(self, base_url, ops): store_attr()
 
     @classmethod
@@ -355,7 +355,7 @@ class SpecParser:
         return cls(base_url=spec.get("baseUrl", ""), ops=discovery_to_ops(spec))
 
     def to_dict(self):
-        "Compact plain-data form (empty fields dropped, types as names); see `from_dict` and `save`."
+        "Return a dictionary with empty fields omitted and Python types stored as names."
         def _op(o):
             d = {k:v for k,v in asdict(o).items() if v}
             if 'param_types' in d: d['param_types'] = {k:t.__name__ for k,t in d['param_types'].items()}
@@ -369,7 +369,7 @@ class SpecParser:
         return cls(d['base_url'], [_op(o) for o in d['ops']])
 
     def save(self, path):
-        "Write `to_dict` form as a Python module defining `spec`: compact, git-diffable, shippable in client packages."
+        "Write a Python module containing the `spec` dictionary."
         txt = f"spec = {pprint.pformat(self.to_dict(), width=360, sort_dicts=False)}\n"
         compile(txt, str(path), 'exec')
         Path(path).write_text(txt)
