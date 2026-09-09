@@ -81,7 +81,7 @@ ant_cli.messages
 - [messages.beta_message_batches_results](https://docs.claude.com/en/docs/build-with-claude/batch-processing)(message_batch_id): *Retrieve Message Batch results*
 - [messages.beta_messages_count_tokens_post](https://docs.claude.com/en/docs/build-with-claude/token-counting)(messages, model, cache_control, context_management, mcp_servers, output_config, output_format, speed, system, thinking, tool_choice, tools): *Count tokens in a Message*
 
-Drill into any operation to see its full signature and parameter docs:
+Read the actual operation with `doc(ant_cli.models.models_get)` or its bare display for parameter descriptions, bound defaults, request controls, and async usage. Inspecting the operation’s class cannot show its generated signature. `xdir(group, pattern)` filters large groups by name. Documentation and discovery send no requests:
 
 ``` python
 ant_cli.models.models_get

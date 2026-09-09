@@ -21,7 +21,7 @@ __all__ = ['INTROSPECT', 'distill', 'GqlSpec', 'GqlError', 'GqlClient', 'GqlFrag
 from fastcore.utils import *
 from fasttransport.core import AsyncTransport
 
-import json, asyncio
+import json, asyncio, inspect
 
 # %% ../nbs/05_gql.ipynb #ebe078a2
 _TREF = 'kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name } } } }'
@@ -72,7 +72,7 @@ def distill(raw):
         elif t['kind'] == 'ENUM': d['values'] = {v['name']: _desc(v['description']) for v in t['enumValues'] or []}
         elif t['kind'] == 'UNION': d['of'] = [p['name'] for p in t['possibleTypes'] or []]
         types[nm] = d
-    return dict(query=sch['queryType']['name'], mutation=sch['mutationType']['name'], types=types)
+    return dict(query=sch['queryType']['name'], mutation=(sch['mutationType'] or {}).get('name'), types=types)
 
 # %% ../nbs/05_gql.ipynb #8e231452
 class GqlSpec:
@@ -110,6 +110,7 @@ class _TypeInfo:
         elif t['kind'] == 'UNION': res.append('one of: ' + ', '.join(t['of']))
         else: res += [f'  {k}: {f["type"]}' + (f'  # {f["desc"]}' if f['desc'] else '') for k, f in t.get('fields', {}).items()]
         return '\n'.join(res)
+    def _repr_markdown_(self): return f'```text\n{self!r}\n```'
 
 class _TypeIdx:
     def __init__(self, types): self._types = types
@@ -172,7 +173,10 @@ def _fmt_args(args, argspec, types):
 
 # %% ../nbs/05_gql.ipynb #c37d4669
 class GqlFrag:
-    "A lazily-built GraphQL query path: attribute access extends it, calling binds args, awaiting executes"
+    """A GraphQL query path: attribute access extends it, calling binds args, awaiting executes.
+
+    Call with keyword arguments to bind field arguments, or with a selection string for branching selections. A raw selection ends chaining. Use `xdir(fragment)` for available fields and `client.t.TypeName` for schema types. Await only a leaf or a fragment with a selection.
+    """
     def __init__(self, client, steps): self._c, self._steps = client, steps
 
     def _fieldinfo(self, i=None):
@@ -230,6 +234,9 @@ def __repr__(self:GqlFrag):
     if flds := self._c.spec.types[cur].get('fields', {}):
         res.append(f'fields of {cur}: ' + ' '.join(list(flds)[:20]) + (' ...' if len(flds) > 20 else ''))
     return '\n'.join(res)
+
+@patch
+def _repr_markdown_(self:GqlFrag): return f'```text\n{self!r}\n```\n\n{inspect.getdoc(type(self))}'
 
 # %% ../nbs/05_gql.ipynb #9c52696f
 def _unwrap(data, steps):

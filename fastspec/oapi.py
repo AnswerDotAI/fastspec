@@ -13,9 +13,8 @@ from urllib.parse import urljoin, quote
 from fastcore.utils import *
 from fastcore.meta import delegates
 from fastcore.aio import then
-from fastcore.apisurface import snake, sanitized_params, mk_sig, mk_doc, OpGroup, mk_groups, full_docs as _full_docs
+from fastcore.apisurface import snake, sanitized_params, mk_sig, mk_doc, mk_groups, full_docs as _full_docs
 
-from fasttransport.errors import APIError
 from .spec import OpSpec, SpecParser
 from fasttransport.core import AsyncTransport,SyncTransport
 
@@ -37,18 +36,38 @@ class OpFunc:
         self.summary  = op_spec.summary or f"{op_spec.verb} {op_spec.path}"
         self.__signature__ = mk_sig(op_spec, self.sparams, self.defaults)
         self.__doc__       = mk_doc(self, self.__signature__, self.sparams) + _examples_doc(op_spec.body_examples)
+        self.__doc__ += ('\n\nCall options (in addition to schema parameters): `headers_` adds HTTP headers; '
+            '`query_` merges extra query entries; `body_` merges extra body fields; '
+            '`raw_=True` returns the transport response without decoding it.')
+        self.__doc__ += ('\n\n`stream=True` returns an async iterator after awaiting the call. It cannot be combined with `raw_=True`.'
+            if is_async_callable(self) else '\n\nStreaming requires an async client.')
+        self.__doc__ += '\n\nHTTP errors raise `fasttransport.errors.APIError`; inspect its `status_code` and message.'
 
-    def _repr_markdown_(self): return self.__doc__
-    def __repr__(self): return f"{'.'.join(snake(g) for g in listify(self.group))}.{self.name}{self.__signature__}\n{self.docs_url}"
+    def _repr_markdown_(self):
+        mode = 'await ' if is_async_callable(self) else ''
+        params = ', '.join(self.__signature__.parameters)
+        name = '.'.join([*(snake(g) for g in listify(self.group)), self.name])
+        return f'`{mode}{name}({params})`\n\n{self.__doc__}'
+    __repr__ = _repr_markdown_
+
+# %% ../nbs/04_oapi.ipynb #87a1090a
+@patch
+async def __call__(self:OpFunc, *args, **kwargs):
+    stream, url, headers, query, route, kw = self._prep(args, kwargs)
+    if stream: return self._stream(url, headers=headers, query=query, **kw)
+    if not self.media_url: return await self._request(url, headers=headers, query=query, **kw)
+    try: return await self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=kw['body'])
+    except Exception as e: self._raise_with_context(e)
 
 # %% ../nbs/04_oapi.ipynb #6e381df4
 @patch
 def _bind(self:OpFunc, args, kwargs):
-    'Prepare kwargs from args and kwargs; params covered by a call-time default take no positional'
+    'Bind positional args to params without an explicit value or client default.'
     rsp = {v:k for k,v in self.sparams.items()}
-    flds = [o for o in self.__signature__.parameters if o not in kwargs and rsp.get(o,o) not in self.defaults]
+    covered = {k for k,v in self.defaults.items() if v is not UNSET}
+    flds = [o for o in self.__signature__.parameters if kwargs.get(o, UNSET) is UNSET and rsp.get(o,o) not in covered]
     if len(args) > len(flds):
-        cov = [o for o in self.__signature__.parameters if rsp.get(o,o) in self.defaults]
+        cov = [o for o in self.__signature__.parameters if rsp.get(o,o) in covered]
         raise TypeError(f"{self.name}: too many positional args; {', '.join(cov)} are covered by client defaults -- pass by keyword to override")
     for a,b in zip(args, flds): kwargs[b] = a
     return kwargs
@@ -57,23 +76,18 @@ def _bind(self:OpFunc, args, kwargs):
 @patch
 def _split(self:OpFunc, kwargs):
     "Split kwargs into route/query/body/files + control kwargs."
-    stream = kwargs.get("stream", False)
-    headers = kwargs.pop("headers_", {})
-    # Map sanitized names back to originals
     rsparams = {v:k for k,v in self.sparams.items()}
+    params = {k:v for k,v in self.defaults.items() if v is not UNSET}
+    params.update((rsparams.get(k, k), v) for k,v in kwargs.items() if v is not UNSET)
+    stream = params.get("stream", False)
+    headers = kwargs.pop("headers_", {})
 
     route, query, body, files = {}, {}, {}, {}
-    for k,v in kwargs.items():
-        if v is UNSET: continue
-        orig = rsparams.get(k, k)
+    for orig,v in params.items():
         if   orig in self.route_params: route[orig] = v
         elif orig in self.file_params:  files[orig] = v
         elif orig in self.query_params: query[orig] = v
         elif orig in self.body_params:  body[orig] = v
-
-    for k,v in self.defaults.items():
-        if   k in self.route_params: route.setdefault(k, v)
-        elif k in self.query_params: query.setdefault(k, v)
 
     query.update(kwargs.pop("query_", {}))
     body.update(kwargs.pop("body_", {}))
@@ -96,46 +110,6 @@ def _join_url(base, path):
     "Join base URL and path, ensuring correct slash handling."
     return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
 
-# %% ../nbs/04_oapi.ipynb #ca48c44b
-@patch
-def _raise_with_context(self:OpFunc, exc:Exception, *, endpoint:str, route:Optional[dict], query:Optional[dict], body:Optional[dict]):
-    "Raise APIError with operation context for dynamic op calls."
-    provider,model,ep = '','',''
-    # TODO: Make APIError generic, users can modify/subclass it include additional info like model,provider etc..
-    if isinstance(exc, (httpx2.HTTPStatusError, httpx2.RequestError)):
-        raise exc.api_error(provider=provider, model=model) from exc
-    raise exc
-
-
-# %% ../nbs/04_oapi.ipynb #c7c96f87
-@patch
-@delegates(AsyncTransport.request) # files, raw
-async def _request(self:OpFunc, url, *, headers=None, query=None, body=None, route=None, **kwargs):
-    "Execute an HTTP request and return decoded response."
-    try: return dict2obj(await self.client.request(self.verb, url, headers=headers, params=query, json=body, **kwargs))
-    except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
-
-@patch
-@delegates(AsyncTransport.stream) # files, raw
-async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, route=None, **kwargs):
-    "Execute an SSE request yielding parsed JSON events."
-    try:
-        async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json=body, **kwargs): yield dict2obj(ev)
-    except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
-
-# %% ../nbs/04_oapi.ipynb #b91338b1
-@patch
-def _upload(self:OpFunc, media, media_type, *, headers, query, route, body):
-    "Upload `media` through Google's resumable protocol"
-    if media is None: raise TypeError(f"{self.name}: `media` is required")
-    if isinstance(media, (str, Path)): fname,media = media, Path(media).read_bytes()
-    else: fname = body.get('name')
-    if hasattr(media, 'read'): media = media.read()
-    ctype = media_type or mimetypes.guess_type(fname or '')[0] or 'application/octet-stream'
-    url = _path(self.media_url, route_params=route)
-    return then(self.client.request('POST', url, headers={**headers, 'X-Upload-Content-Type': ctype}, params={**query, 'uploadType': 'resumable'}, json=body, raw=True),
-        ~Self.headers['location'], partial(self.client.request, 'PUT', headers={'Content-Type': ctype}, content=media), dict2obj)
-
 # %% ../nbs/04_oapi.ipynb #0296d943
 @patch
 def _prep(self:OpFunc, args, kwargs):
@@ -149,20 +123,36 @@ def _prep(self:OpFunc, args, kwargs):
     if stream and kw.get("raw"): raise TypeError("raw_=True can't be combined with stream=True")
     return stream, url, headers, query, route, kw
 
-@patch
-async def __call__(self:OpFunc, *args, **kwargs):
-    stream, url, headers, query, route, kw = self._prep(args, kwargs)
-    if stream: return self._stream(url, headers=headers, query=query, route=route, **kw)
-    if not self.media_url: return await self._request(url, headers=headers, query=query, route=route, **kw)
-    try: return await self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=kw['body'])
-    except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=kw['body'])
-
 # %% ../nbs/04_oapi.ipynb #75d6cd54
 def op_func(spec, name, group=None):
     "A detached `OpFunc` for spec op `name`: a signature and docs donor, e.g. a `delegates` target for wrappers"
     o = first(o for o in spec.ops if o.name == name and (group is None or o.group == group))
     if o is None: raise ValueError(f'no op named {name!r}' + (f' in group {group!r}' if group else ''))
     return OpFunc(o, None, '')
+
+# %% ../nbs/04_oapi.ipynb #ca48c44b
+@patch
+def _raise_with_context(self:OpFunc, exc:Exception, *, endpoint:str=''):
+    "Raise APIError, using the request's endpoint unless overridden."
+    if isinstance(exc, (httpx2.HTTPStatusError, httpx2.RequestError)): raise exc.api_error(endpoint=endpoint) from exc
+    raise exc
+
+
+# %% ../nbs/04_oapi.ipynb #4d415470
+@patch
+@delegates(AsyncTransport.request) # files, raw
+async def _request(self:OpFunc, url, *, headers=None, query=None, body=None, **kwargs):
+    "Execute an HTTP request and return decoded response."
+    try: return dict2obj(await self.client.request(self.verb, url, headers=headers, params=query, json=body, **kwargs))
+    except Exception as e: self._raise_with_context(e)
+
+@patch
+@delegates(AsyncTransport.stream) # files, raw
+async def _stream(self:OpFunc, url, *, headers=None, query=None, body=None, **kwargs):
+    "Execute an SSE request yielding parsed JSON events."
+    try:
+        async for ev in self.client.stream(self.verb, url, headers=headers, params=query, json=body, **kwargs): yield dict2obj(ev)
+    except Exception as e: self._raise_with_context(e)
 
 # %% ../nbs/04_oapi.ipynb #b23f43ae
 class SyncOpFunc(OpFunc):
@@ -174,7 +164,7 @@ class SyncOpFunc(OpFunc):
         try:
             if self.media_url: return self._upload(kwargs.get('media'), kwargs.get('media_type'), headers=headers, query=query, route=route, body=body)
             return dict2obj(self.client.request(self.verb, url, headers=headers, params=query, json=body, **kw))
-        except Exception as e: self._raise_with_context(e, endpoint='', route=route, query=query, body=body)
+        except Exception as e: self._raise_with_context(e)
 
 # %% ../nbs/04_oapi.ipynb #d4ff9dd9
 class OpenAPIClient:
@@ -202,10 +192,23 @@ class OpenAPIClient:
 
     def __dir__(self): return object.__dir__(self)
 
+# %% ../nbs/04_oapi.ipynb #b91338b1
+@patch
+def _upload(self:OpFunc, media, media_type, *, headers, query, route, body):
+    "Upload `media` through Google's resumable protocol"
+    if media is None: raise TypeError(f"{self.name}: `media` is required")
+    if isinstance(media, (str, Path)): fname,media = media, Path(media).read_bytes()
+    else: fname = body.get('name')
+    if hasattr(media, 'read'): media = media.read()
+    ctype = media_type or mimetypes.guess_type(fname or '')[0] or 'application/octet-stream'
+    url = _path(self.media_url, route_params=route)
+    return then(self.client.request('POST', url, headers={**headers, 'X-Upload-Content-Type': ctype}, params={**query, 'uploadType': 'resumable'}, json=body, raw=True),
+        ~Self.headers['location'], partial(self.client.request, 'PUT', headers={'Content-Type': ctype}, content=media), dict2obj)
+
 # %% ../nbs/04_oapi.ipynb #a45f810a
 @patch
 def full_docs(self:OpenAPIClient):
-    "Complete markdown API reference: every group and operation."
+    "List every group and operation with parameter names and summaries."
     return _full_docs(self.groups)
 
 # %% ../nbs/04_oapi.ipynb #b97fc48e
