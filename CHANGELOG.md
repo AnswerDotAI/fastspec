@@ -2,12 +2,21 @@
 
 <!-- do not remove -->
 
+## 0.2.5
+
+### New Features
+
+- Rewrite gql and spec module prose and docstrings ([#39](https://github.com/AnswerDotAI/fastspec/issues/39))
+- Improve OpFunc docs and reprs, honor UNSET in defaults across all param locations, simplify error context, and handle null mutationType ([#38](https://github.com/AnswerDotAI/fastspec/issues/38))
+- Improve media type detection for resumable uploads ([#37](https://github.com/AnswerDotAI/fastspec/pull/37)), thanks to [@ncoop57](https://github.com/ncoop57)
+
+
 ## 0.2.4
 
 ### New Features
 
 - Move errors to fasttransport, and remove FastSpecError and SpecError ([#36](https://github.com/AnswerDotAI/fastspec/pull/36)), thanks to [@jph00](https://github.com/jph00)
-- Add op_func to create detached OpFunc as a delegates target so wrappers inherit spec op signatures and docs ([#35](https://github.com/AnswerDotAI/fastspec/issues/35))
+- Add `op_func` to create detached OpFunc as a delegates target so wrappers inherit spec op signatures and docs ([#35](https://github.com/AnswerDotAI/fastspec/issues/35))
 - Show request body examples in docs ([#30](https://github.com/AnswerDotAI/fastspec/pull/30)), thanks to [@kafkasl](https://github.com/kafkasl)
 
 
