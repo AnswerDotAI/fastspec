@@ -42,6 +42,7 @@ class OpFunc:
         self.__doc__ += ('\n\n`stream=True` returns an async iterator after awaiting the call. It cannot be combined with `raw_=True`.'
             if is_async_callable(self) else '\n\nStreaming requires an async client.')
         self.__doc__ += '\n\nHTTP errors raise `fasttransport.errors.APIError`; inspect its `status_code` and message.'
+        self.__doc__ += "\n\nA keyword argument that isn't a schema parameter, a call option or `stream` raises `TypeError`."
 
     def _repr_markdown_(self):
         mode = 'await ' if is_async_callable(self) else ''
@@ -77,6 +78,8 @@ def _bind(self:OpFunc, args, kwargs):
 def _split(self:OpFunc, kwargs):
     "Split kwargs into route/query/body/files + control kwargs."
     rsparams = {v:k for k,v in self.sparams.items()}
+    bad = [k for k in kwargs if k not in ('headers_', 'query_', 'body_', 'raw_', 'stream') and rsparams.get(k, k) not in self.op_spec.params]
+    if bad: raise TypeError(f"{self.name}() got unexpected keyword arguments: {', '.join(bad)}")
     params = {k:v for k,v in self.defaults.items() if v is not UNSET}
     params.update((rsparams.get(k, k), v) for k,v in kwargs.items() if v is not UNSET)
     stream = params.get("stream", False)
@@ -90,6 +93,7 @@ def _split(self:OpFunc, kwargs):
         elif orig in self.body_params:  body[orig] = v
 
     query.update(kwargs.pop("query_", {}))
+    query = {k:v for k,v in query.items() if v is not None}
     body.update(kwargs.pop("body_", {}))
     if self.verb in ("GET", "DELETE", "HEAD", "OPTIONS") and not body: body = None
     return stream, headers, route, query, body, files
