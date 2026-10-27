@@ -2,6 +2,14 @@
 
 <!-- do not remove -->
 
+## 0.2.6
+
+### New Features
+
+- OpFunc raises TypeError for unexpected keyword arguments and omits None-valued query parameters ([#40](https://github.com/AnswerDotAI/fastspec/issues/40))
+- Support Google Discovery `mediaUpload` endpoints in generated clients ([#8](https://github.com/AnswerDotAI/fastspec/issues/8))
+
+
 ## 0.2.5
 
 ### New Features
