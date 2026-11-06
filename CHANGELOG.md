@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.7
+
+### New Features
+
+- Normalize boolean schemas in `_resolve_obj`: true becomes {} and false becomes {not: {}} ([#41](https://github.com/AnswerDotAI/fastspec/issues/41))
+
+
 ## 0.2.6
 
 ### New Features
