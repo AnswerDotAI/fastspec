@@ -89,7 +89,8 @@ def _resolve_ref(ref, spec):
 
 # %% ../nbs/03_spec.ipynb #25ba8bb1
 def _resolve_obj(obj, spec):
-    "Resolve a `$ref` object and merge local overrides when present."
+    "Normalize boolean schemas and resolve `$ref` with local overrides."
+    if isinstance(obj, bool): return {} if obj else {'not': {}}
     if "$ref" not in obj: return obj
     base = _resolve_ref(obj["$ref"], spec)
     if len(obj) == 1: return base
