@@ -127,14 +127,28 @@ def _schema_props_required(schema, spec):
 
 # %% ../nbs/03_spec.ipynb #2319e3a4
 _type_map = dict(string=str, integer=int, number=float, boolean=bool, array=list, object=dict)
+_text_media = {'application/json', 'application/xml', 'application/x-www-form-urlencoded'}
+
+def _is_binary(schema, spec):
+    "True when `schema` describes raw binary data (OpenAPI 3.0 `format: binary` or 3.1 binary `contentMediaType`)."
+    if not isinstance(schema, dict): return False
+    schema = _resolve_obj(schema, spec)
+    if schema.get("format") == "binary": return True
+    mt = schema.get("contentMediaType")
+    if mt and not schema.get("contentEncoding") and not mt.startswith("text/") and mt not in _text_media: return True
+    for key in ("anyOf", "oneOf"):
+        subs = [_resolve_obj(s, spec) for s in schema.get(key, [])]
+        non_null = [s for s in subs if s.get("type") != "null"]
+        if non_null and all(_is_binary(s, spec) for s in non_null): return True
+    return False
 
 def _schema_py_type(schema, spec):
     "Best-effort Python type from a JSON Schema fragment."
     if not isinstance(schema, dict): return None
     schema = _resolve_obj(schema, spec)
+    if _is_binary(schema, spec): return bytes
     t = schema.get("type")
-    if isinstance(t, L): t = first(t.filter(lambda x: x != 'null'))
-    if t == "string" and schema.get("format") == "binary": return bytes
+    if isinstance(t, (list, L)): t = first(o for o in t if o != 'null')
     if t in _type_map: return _type_map[t]
     if t == "null": return type(None)
     for key in ("oneOf", "anyOf", "allOf"):
@@ -208,7 +222,7 @@ def _body_params(op, spec):
         return AttrDict(body_params=[], file_params=[], required_params=set(), param_types={},
             param_docs={}, param_defaults={}, request_content_type=ct, body_examples=bexs)
     props, req = _schema_props_required(schema, spec)
-    fparams = [k for k,v in props.items() if _resolve_obj(v, spec).get("format") == "binary"]
+    fparams = [k for k,v in props.items() if _is_binary(v, spec)]
     bparams = [k for k in props if k not in fparams]
     ptypes = {k: _schema_py_type(v, spec) for k,v in props.items()}
     pdocs = {k: d for k,v in props.items() if (d := _prop_desc(v, spec))}
