@@ -74,6 +74,11 @@ def _bind(self:OpFunc, args, kwargs):
     return kwargs
 
 # %% ../nbs/04_oapi.ipynb #9327d89c
+def _file_arg(v):
+    "Convert a `Path` to an httpx `(filename, bytes, content_type)` tuple; pass other file inputs through."
+    if isinstance(v, Path): return (v.name, v.read_bytes(), mimetypes.guess_type(v.name)[0] or 'application/octet-stream')
+    return v
+
 @patch
 def _split(self:OpFunc, kwargs):
     "Split kwargs into route/query/body/files + control kwargs."
@@ -88,7 +93,8 @@ def _split(self:OpFunc, kwargs):
     route, query, body, files = {}, {}, {}, {}
     for orig,v in params.items():
         if   orig in self.route_params: route[orig] = v
-        elif orig in self.file_params:  files[orig] = v
+        elif orig in self.file_params:
+            if v is not None: files[orig] = _file_arg(v)
         elif orig in self.query_params: query[orig] = v
         elif orig in self.body_params:  body[orig] = v
 
