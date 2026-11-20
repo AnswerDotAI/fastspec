@@ -4,4 +4,6 @@ Modules:
 
 - `fastspec.gql`: Build GraphQL queries by field-checked attribute chaining, reuse distilled schemas, and combine queries into batched requests"""
 
-__version__ = "0.2.8"
+__version__ = "0.2.9"
+
+
