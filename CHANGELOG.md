@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.8
+
+### New Features
+
+- Support OpenAPI 3.1 binary contentMediaType file params and send Path uploads as multipart tuples ([#42](https://github.com/AnswerDotAI/fastspec/pull/42)), thanks to [@ncoop57](https://github.com/ncoop57)
+
+
 ## 0.2.7
 
 ### New Features
