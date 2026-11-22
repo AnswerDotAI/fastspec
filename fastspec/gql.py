@@ -256,8 +256,9 @@ def _repr_markdown_(self:GqlFrag): return f'```text\n{self!r}\n```\n\n{inspect.g
 
 # %% ../nbs/05_gql.ipynb #9c52696f
 def _unwrap(data, steps):
-    for nm, _, raw in steps:
+    for i, (nm, _, raw) in enumerate(steps):
         if data is None: return None
+        if isinstance(data, (list, L)): return L(_unwrap(o, steps[i:]) for o in data)
         data = data[nm]
         if raw: break
     return data

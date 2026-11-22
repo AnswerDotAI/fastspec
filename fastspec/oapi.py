@@ -17,6 +17,7 @@ from fastcore.apisurface import snake, sanitized_params, mk_sig, mk_doc, mk_grou
 
 from .spec import OpSpec, SpecParser
 from fasttransport.core import AsyncTransport,SyncTransport
+from fasttransport.errors import APIError
 
 
 # %% ../nbs/04_oapi.ipynb #6b2f1057
