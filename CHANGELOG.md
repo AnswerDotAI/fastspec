@@ -2,6 +2,17 @@
 
 <!-- do not remove -->
 
+## 0.2.9
+
+### New Features
+
+- Handle intermediate lists in gql `_unwrap` and import APIError in oapi ([#44](https://github.com/AnswerDotAI/fastspec/issues/44))
+
+### Bugs Squashed
+
+- Open resumable upload sessions with the method's own HTTP verb ([#43](https://github.com/AnswerDotAI/fastspec/pull/43)), thanks to [@RensDimmendaal](https://github.com/RensDimmendaal)
+
+
 ## 0.2.8
 
 ### New Features
