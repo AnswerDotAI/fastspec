@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.10
+
+### Bugs Squashed
+
+- Check property value is a dict before accessing description in `_schema_props_required` ([#45](https://github.com/AnswerDotAI/fastspec/issues/45))
+
+
 ## 0.2.9
 
 ### New Features
