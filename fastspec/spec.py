@@ -113,7 +113,7 @@ def _schema_props_required(schema, spec):
     schema = _resolve_obj(schema, spec)
     props = schema.get("properties", {})
     req = set(schema.get("required", []))
-    if not req: req = {k for k,v in props.items() if _pat_req.match(v.get("description", ""))}
+    if not req: req = {k for k,v in props.items() if isinstance(v, dict) and _pat_req.match(v.get("description", ""))}
     for sub in schema.get("allOf", []):
         p, r = _schema_props_required(sub, spec)
         props = merge(props, p)
