@@ -91,11 +91,11 @@ def _split(self:OpFunc, kwargs):
     stream = params.get("stream", False)
     headers = kwargs.pop("headers_", {})
 
-    route, query, body, files = {}, {}, {}, {}
+    route, query, body, files = {}, {}, {}, []
     for orig,v in params.items():
         if   orig in self.route_params: route[orig] = v
         elif orig in self.file_params:
-            if v is not None: files[orig] = _file_arg(v)
+            if v is not None: files.extend((orig, _file_arg(o)) for o in (v if isinstance(v, (list, L)) else [v]) if o is not None)
         elif orig in self.query_params: query[orig] = v
         elif orig in self.body_params:  body[orig] = v
 
