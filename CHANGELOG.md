@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.2.11
+
+### New Features
+
+- Fix multiple file uploads in fastspec ([#46](https://github.com/AnswerDotAI/fastspec/pull/46)), thanks to [@dienhoa](https://github.com/dienhoa)
+
+
 ## 0.2.10
 
 ### Bugs Squashed
