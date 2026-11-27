@@ -7,7 +7,7 @@ name = "fastspec"
 dynamic = ["version"]
 description = "Dynamic OpenAPI, Discovery, and GraphQL spec client for Python — turn any API spec into a fully-typed async client with attribute chaining, streaming, and file uploads"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "Apache-2.0"
 authors = [{name = "Kerem Turgutlu", email = "keremturgutlu@gmail.com"}]
 keywords = ['nbdev']
